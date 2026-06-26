@@ -1,29 +1,199 @@
-#[cfg(test)]
-mod tests {
-    use crate::bin_format::{encode_parameters, MAGIC};
-    use crate::crypto::derive_key_from_secret;
-    use crate::payload_codec::{decrypt_payload, encrypt_payload};
-    use crate::model::{ParamPermission, ParamType, Parameter};
+//! Unit tests for the whole encode / validate / encrypt / decrypt chain.
 
-    #[test]
-    fn test_bin_format_roundtrip() {
-        let parameters = (0..72)
-            .map(|address| Parameter {
-                address: address as u8,
-                name: format!("参数 {}", address),
-                default_value: address as u16,
-                param_type: if address % 2 == 0 { ParamType::Control } else { ParamType::Protection },
-                permission: if address % 3 == 0 { ParamPermission::Visible } else { ParamPermission::Hidden },
-            })
-            .collect::<Vec<_>>();
+use crate::bin_format::{
+    export_encrypted_bin_bytes, parse_encrypted_bin_bytes, MAGIC,
+};
+use crate::model::{
+    create_default_parameters, ParamPermission, ParamType, Parameter, PARAM_COUNT,
+};
+use crate::payload_codec::{decode_payload, encode_payload};
+use crate::validator::validate_parameters;
 
-        let encoded = encode_parameters(&parameters).expect("encode should succeed");
-        assert!(encoded.starts_with(MAGIC));
-        assert_eq!(encoded.len(), 4 + 72 * 38);
+/// Build 72 valid parameters with Chinese names for general tests.
+fn build_sample() -> Vec<Parameter> {
+    (0..PARAM_COUNT)
+        .map(|i| Parameter {
+            address: i as u8,
+            name: format!("母线参数 {}", i),
+            default_value: (i as u16) * 10,
+            param_type: if i % 2 == 0 {
+                ParamType::Control
+            } else {
+                ParamType::Protection
+            },
+            permission: if i % 3 == 0 {
+                ParamPermission::Visible
+            } else {
+                ParamPermission::Hidden
+            },
+        })
+        .collect()
+}
 
-        let key = derive_key_from_secret("test-secret");
-        let encrypted = encrypt_payload(&key, &encoded).expect("encrypt should succeed");
-        let decrypted = decrypt_payload(&key, &encrypted).expect("decrypt should succeed");
-        assert_eq!(&decrypted, &encoded);
+#[test]
+fn payload_roundtrip() {
+    let params = build_sample();
+    let bytes = encode_payload(&params).expect("encode ok");
+    let parsed = decode_payload(&bytes).expect("decode ok");
+    assert_eq!(parsed.len(), PARAM_COUNT);
+    for (a, b) in params.iter().zip(parsed.iter()) {
+        assert_eq!(a.address, b.address);
+        assert_eq!(a.name, b.name);
+        assert_eq!(a.default_value, b.default_value);
+        assert_eq!(a.param_type, b.param_type);
+        assert_eq!(a.permission, b.permission);
     }
+}
+
+#[test]
+fn full_export_parse_roundtrip() {
+    let params = build_sample();
+    let bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    assert!(bytes.starts_with(MAGIC));
+    let parsed = parse_encrypted_bin_bytes(&bytes).expect("parse ok");
+    assert_eq!(parsed.parameters.len(), PARAM_COUNT);
+    for (a, b) in params.iter().zip(parsed.parameters.iter()) {
+        assert_eq!(a.address, b.address);
+        assert_eq!(a.name, b.name);
+        assert_eq!(a.default_value, b.default_value);
+        assert_eq!(a.param_type, b.param_type);
+        assert_eq!(a.permission, b.permission);
+    }
+}
+
+#[test]
+fn address_completeness_valid() {
+    let params = build_sample();
+    let errors = validate_parameters(&params);
+    assert!(errors.is_empty(), "expected no errors, got {:?}", errors);
+}
+
+#[test]
+fn duplicate_address_rejected() {
+    let mut params = build_sample();
+    params[5].address = 3; // now addresses 3 (from index 5) and 3 (original index 3) collide
+    let errors = validate_parameters(&params);
+    assert!(!errors.is_empty(), "duplicate address must fail validation");
+}
+
+#[test]
+fn missing_address_rejected() {
+    let mut params = build_sample();
+    params.remove(10); // drop one, count drops to 71
+    let errors = validate_parameters(&params);
+    assert!(!errors.is_empty(), "missing address must fail validation");
+}
+
+#[test]
+fn empty_name_rejected() {
+    let mut params = build_sample();
+    params[7].name = "".to_string();
+    let errors = validate_parameters(&params);
+    assert!(
+        errors.iter().any(|e| e.field.as_deref() == Some("name")),
+        "empty name must fail validation"
+    );
+}
+
+#[test]
+fn default_value_boundaries_ok() {
+    let mut params = build_sample();
+    params[0].default_value = 0;
+    params[1].default_value = 65535;
+    let errors = validate_parameters(&params);
+    assert!(errors.is_empty(), "0 and 65535 must be valid: {:?}", errors);
+}
+
+#[test]
+fn chinese_name_not_present_in_bin_bytes() {
+    let params = build_sample();
+    let bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    // Look for a representative Chinese name substring inside the raw bin.
+    // "母线" is UTF-8 encoded as e6 af 96 e7 bab5 in this case — but the actual
+    // encoding is `e6 9c b5 e7 ba bf` (depending on character). We instead
+    // check the simpler invariant: search for any ASCII letter that the name
+    // would not contain (like 'A') inside the ciphertext region.
+    let header_size = 48;
+    let body = &bytes[header_size..];
+    // The ciphertext should NOT contain the literal ASCII string "母线"
+    // (which would be visible as 6 raw bytes 0xE6 0x9C 0xB5 0xE7 0xBA 0xBF).
+    let needle = "母线参数".as_bytes();
+    assert!(
+        find_subsequence(body, needle).is_none(),
+        "Chinese name must not appear in the encrypted body"
+    );
+    // Sanity: the plaintext header should also not leak the names.
+    let header = &bytes[..header_size];
+    assert!(
+        find_subsequence(header, needle).is_none(),
+        "Chinese name must not appear in the header either"
+    );
+}
+
+#[test]
+fn tampered_byte_fails_parse() {
+    let params = build_sample();
+    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    // Flip one byte in the encrypted body.
+    let target = bytes.len() - 1;
+    bytes[target] ^= 0xFF;
+    let result = parse_encrypted_bin_bytes(&bytes);
+    assert!(result.is_err(), "tampered byte must cause parse failure");
+}
+
+#[test]
+fn tampered_header_fails_parse() {
+    let params = build_sample();
+    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    // Flip one byte in the Header (AAD).
+    bytes[20] ^= 0x55;
+    let result = parse_encrypted_bin_bytes(&bytes);
+    assert!(result.is_err(), "tampered header must cause parse failure");
+}
+
+#[test]
+fn invalid_magic_rejected() {
+    let params = build_sample();
+    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    bytes[0] = b'X';
+    let result = parse_encrypted_bin_bytes(&bytes);
+    assert!(result.is_err(), "wrong magic must fail");
+}
+
+#[test]
+fn wrong_param_count_rejected() {
+    // Use a payload whose param_count byte has been mutated.
+    let params = build_sample();
+    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    // Header byte 9 is param_count.
+    bytes[9] = 50;
+    // AAD change forces AES-GCM to fail.
+    let result = parse_encrypted_bin_bytes(&bytes);
+    assert!(result.is_err(), "wrong param_count must fail (tag mismatch)");
+}
+
+#[test]
+fn default_project_is_valid() {
+    let project = crate::project_file::default_project();
+    let errors = validate_parameters(&project.parameters);
+    assert!(errors.is_empty(), "default project must validate: {:?}", errors);
+}
+
+#[test]
+fn create_default_parameters_count() {
+    let params = create_default_parameters();
+    assert_eq!(params.len(), PARAM_COUNT);
+}
+
+/// Find `needle` in `haystack`, returning the index of the first occurrence.
+fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+    for i in 0..=(haystack.len() - needle.len()) {
+        if &haystack[i..i + needle.len()] == needle {
+            return Some(i);
+        }
+    }
+    None
 }

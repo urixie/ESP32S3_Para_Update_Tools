@@ -1,63 +1,83 @@
 import React from 'react';
-import { Parameter } from '../types/parameter';
+import { Parameter, ParamType, ParamPermission, paramTypeLabel, permissionLabel } from '../types/parameter';
 
 interface ParamTableProps {
   parameters: Parameter[];
   onChange: (index: number, data: Partial<Parameter>) => void;
+  highlightAddress?: number | null;
 }
 
-export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange }) => {
+const clampU16 = (v: number): number => {
+  if (Number.isNaN(v)) return 0;
+  if (v < 0) return 0;
+  if (v > 65535) return 65535;
+  return Math.floor(v);
+};
+
+export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange, highlightAddress }) => {
   return (
-    <table className="param-table">
-      <thead>
-        <tr>
-          <th>地址</th>
-          <th>名称</th>
-          <th>默认值</th>
-          <th>类型</th>
-          <th>权限</th>
-        </tr>
-      </thead>
-      <tbody>
-        {parameters.map((param, index) => (
-          <tr key={param.address}>
-            <td>{param.address}</td>
-            <td>
-              <input
-                value={param.name}
-                onChange={(e) => onChange(index, { name: e.target.value })}
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                min={0}
-                max={65535}
-                value={param.defaultValue}
-                onChange={(e) => onChange(index, { defaultValue: Number(e.target.value) })}
-              />
-            </td>
-            <td>
-              <select
-                value={param.type}
-                onChange={(e) => onChange(index, { type: e.target.value as Parameter['type'] })}
-              >
-                <option value="control">控制</option>
-                <option value="protection">保护</option>
-              </select>
-            </td>
-            <td>
-              <select
-                value={param.permission}
-                onChange={(e) => onChange(index, { permission: e.target.value as Parameter['permission'] })}
-              >
-                <option value="visible">可见</option>
-                <option value="hidden">隐藏</option>
-              </select>
-            </td>
+    <div className="param-table-wrapper">
+      <table className="param-table">
+        <thead>
+          <tr>
+            <th style={{ width: 64 }}>地址</th>
+            <th>名称</th>
+            <th style={{ width: 120 }}>默认值</th>
+            <th style={{ width: 100 }}>类型</th>
+            <th style={{ width: 100 }}>权限</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {parameters.map((param, index) => {
+            const isHighlighted = highlightAddress === param.address;
+            return (
+              <tr key={param.address} className={isHighlighted ? 'highlight' : undefined}>
+                <td className="addr-cell">
+                  <span className="addr-badge">{param.address}</span>
+                </td>
+                <td>
+                  <input
+                    className="name-input"
+                    value={param.name}
+                    onChange={(e) => onChange(index, { name: e.target.value })}
+                    placeholder={`参数 ${param.address}`}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="value-input"
+                    type="number"
+                    min={0}
+                    max={65535}
+                    value={param.defaultValue}
+                    onChange={(e) => onChange(index, { defaultValue: clampU16(Number(e.target.value)) })}
+                  />
+                </td>
+                <td>
+                  <select
+                    className="type-select"
+                    value={param.paramType}
+                    onChange={(e) => onChange(index, { paramType: e.target.value as ParamType })}
+                  >
+                    <option value="control">{paramTypeLabel('control')}</option>
+                    <option value="protection">{paramTypeLabel('protection')}</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    className="type-select"
+                    value={param.permission}
+                    onChange={(e) => onChange(index, { permission: e.target.value as ParamPermission })}
+                  >
+                    <option value="visible">{permissionLabel('visible')}</option>
+                    <option value="hidden">{permissionLabel('hidden')}</option>
+                  </select>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 };

@@ -1,26 +1,24 @@
 {
-  "package": {
-    "productName": "Param Bin Tool",
-    "version": "0.1.0"
+  "productName": "Param Bin Tool",
+  "version": "0.1.0",
+  "identifier": "com.example.parambintool",
+  "build": {
+    "frontendDist": "../dist"
   },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "identifier": "com.example.parambintool"
-    },
-    "security": {
-      "csp": null
-    },
-    "updater": {
-      "active": false
-    },
+  "app": {
     "windows": [
       {
         "title": "Param Bin Tool",
-        "width": 1200,
-        "height": 840,
+        "width": 1280,
+        "height": 860,
         "resizable": true
       }
-    ]
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false
   }
 }

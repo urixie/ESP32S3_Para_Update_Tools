@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default permissions for the Param Bin Tool","local":true,"windows":["main"],"permissions":["core:default","core:window:default","core:webview:default","core:event:default","core:app:default","dialog:default","dialog:allow-open","dialog:allow-save"]}}

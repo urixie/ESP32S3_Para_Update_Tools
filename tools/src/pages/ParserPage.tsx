@@ -1,41 +1,152 @@
 import React, { useState } from 'react';
-import { Parameter } from '../types/parameter';
+import { invoke } from '@tauri-apps/api/core';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import {
+  BinHeaderInfo,
+  Parameter,
+  ParsedBinInfo,
+  paramTypeLabel,
+  permissionLabel,
+} from '../types/parameter';
+import { ParamTable } from '../components/ParamTable';
+
+interface StatusMessage {
+  kind: 'info' | 'success' | 'error';
+  text: string;
+}
 
 export const ParserPage: React.FC = () => {
-  const [message, setMessage] = useState('请选择一个加密 bin 文件进行解析。');
+  const [status, setStatus] = useState<StatusMessage>({
+    kind: 'info',
+    text: '请选择由本工具生成的加密 bin 文件进行解析。',
+  });
+  const [header, setHeader] = useState<BinHeaderInfo | null>(null);
   const [parameters, setParameters] = useState<Parameter[]>([]);
+  const [filePath, setFilePath] = useState<string>('');
+  const [busy, setBusy] = useState(false);
+
+  const handleSelectBin = async () => {
+    try {
+      setBusy(true);
+      const path = await openDialog({
+        title: '选择加密 bin 文件',
+        multiple: false,
+        filters: [{ name: 'Encrypted Param Bin', extensions: ['bin'] }],
+      });
+      if (!path || Array.isArray(path)) {
+        setStatus({ kind: 'info', text: '已取消选择。' });
+        return;
+      }
+      setFilePath(path);
+      setStatus({ kind: 'info', text: `正在解析: ${path}` });
+
+      const parsed = (await invoke('parse_encrypted_bin_cmd', { path })) as ParsedBinInfo;
+      setHeader(parsed.header);
+      setParameters(parsed.parameters);
+      setStatus({
+        kind: 'success',
+        text: `解析成功，共 ${parsed.parameters.length} 个参数。`,
+      });
+    } catch (e) {
+      setHeader(null);
+      setParameters([]);
+      setStatus({
+        kind: 'error',
+        text: `解析失败: 文件被篡改、格式错误或密钥错误 (${String(e)})`,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleClear = () => {
+    setHeader(null);
+    setParameters([]);
+    setFilePath('');
+    setStatus({ kind: 'info', text: '已清空解析结果。' });
+  };
 
   return (
     <section className="panel">
-      <h2 className="section-title">参数解析</h2>
-      <p>{message}</p>
-      <div className="action-row">
-        <button disabled>选择 bin 文件</button>
+      <div className="panel-header">
+        <div>
+          <h2 className="section-title">参数解析</h2>
+          <p className="section-subtitle">
+            加载由本工具生成的加密 bin 文件，使用 AES-256-GCM 解密并展示完整参数表。
+          </p>
+        </div>
       </div>
+
+      <div className="action-row">
+        <button className="primary" onClick={handleSelectBin} disabled={busy}>
+          选择 bin 文件
+        </button>
+        <button onClick={handleClear} disabled={busy}>清空结果</button>
+      </div>
+
+      <div className={`status-card status-${status.kind}`}>{status.text}</div>
+
+      {filePath && (
+        <div className="meta-row">
+          <label className="meta-field meta-field-wide">
+            <span>当前文件</span>
+            <input value={filePath} readOnly />
+          </label>
+        </div>
+      )}
+
+      {header && (
+        <div className="header-card">
+          <div className="header-card-title">Header 信息</div>
+          <div className="header-grid">
+            <Field label="Magic" value={'"UEPB"'} />
+            <Field label="Header Len" value={`${header.headerLen} 字节`} />
+            <Field label="Format Version" value={`${header.formatVersion}`} />
+            <Field label="Crypto Algo" value={`${header.cryptoAlgo} (AES-256-GCM)`} />
+            <Field label="Param Count" value={`${header.paramCount}`} />
+            <Field label="Addr Range" value={`${header.addrMin} ~ ${header.addrMax}`} />
+            <Field label="Product ID" value={`${header.productId}`} />
+            <Field label="Key ID" value={`${header.keyId}`} />
+            <Field label="Flags" value={`${header.flags}`} />
+            <Field label="Nonce" value={header.nonceHex} mono />
+            <Field label="Payload Len" value={`${header.payloadLen} 字节`} />
+            <Field label="Tag Len" value={`${header.tagLen} 字节`} />
+            <Field label="File Size" value={`${header.fileSize} 字节`} />
+          </div>
+        </div>
+      )}
+
       {parameters.length > 0 && (
-        <table className="param-table">
-          <thead>
-            <tr>
-              <th>地址</th>
-              <th>名称</th>
-              <th>默认值</th>
-              <th>类型</th>
-              <th>权限</th>
-            </tr>
-          </thead>
-          <tbody>
-            {parameters.map((param) => (
-              <tr key={param.address}>
-                <td>{param.address}</td>
-                <td>{param.name}</td>
-                <td>{param.defaultValue}</td>
-                <td>{param.type}</td>
-                <td>{param.permission}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="sub-section-title">
+            参数表 ({parameters.length}) ·{' '}
+            <span className="muted">
+              控制: {parameters.filter((p) => p.paramType === 'control').length} / 保护:{' '}
+              {parameters.filter((p) => p.paramType === 'protection').length} · 可见:{' '}
+              {parameters.filter((p) => p.permission === 'visible').length} / 隐藏:{' '}
+              {parameters.filter((p) => p.permission === 'hidden').length}
+            </span>
+          </div>
+          <ParamTable parameters={parameters} onChange={() => undefined} />
+          <details className="raw-card">
+            <summary>查看原始参数 JSON</summary>
+            <pre>{JSON.stringify(parameters, null, 2)}</pre>
+          </details>
+        </>
       )}
     </section>
   );
 };
+
+interface FieldProps {
+  label: string;
+  value: string;
+  mono?: boolean;
+}
+
+const Field: React.FC<FieldProps> = ({ label, value, mono }) => (
+  <div className="header-field">
+    <span className="header-field-label">{label}</span>
+    <span className={`header-field-value ${mono ? 'mono' : ''}`}>{value}</span>
+  </div>
+);
