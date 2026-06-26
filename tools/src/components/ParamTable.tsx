@@ -81,7 +81,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                 </td>
                 <td>
                   <input
-                    className={`value-input ${fieldClass}`}
+                    className={`value-input compact-number ${fieldClass}`}
                     type="number"
                     min={0}
                     max={65535}
