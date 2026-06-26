@@ -127,11 +127,22 @@ export const ParserPage: React.FC = () => {
               {parameters.filter((p) => p.permission === 'hidden').length}
             </span>
           </div>
-          <ParamTable
-            parameters={parameters}
-            readonly
-            onChange={() => undefined}
-          />
+          <div className="param-two-column">
+            <ParamTable
+              title="参数 0 ~ 35"
+              parameters={parameters.slice(0, 36)}
+              indexOffset={0}
+              readonly
+              onChange={() => undefined}
+            />
+            <ParamTable
+              title="参数 36 ~ 71"
+              parameters={parameters.slice(36, 72)}
+              indexOffset={36}
+              readonly
+              onChange={() => undefined}
+            />
+          </div>
           <details className="raw-card">
             <summary>查看原始参数 JSON</summary>
             <pre>{JSON.stringify(parameters, null, 2)}</pre>

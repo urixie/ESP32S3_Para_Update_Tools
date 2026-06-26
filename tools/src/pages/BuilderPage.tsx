@@ -224,7 +224,20 @@ export const BuilderPage: React.FC = () => {
         </div>
       )}
 
-      <ParamTable parameters={project.parameters} onChange={handleParamChange} />
+      <div className="param-two-column">
+        <ParamTable
+          title="参数 0 ~ 35"
+          parameters={project.parameters.slice(0, 36)}
+          indexOffset={0}
+          onChange={handleParamChange}
+        />
+        <ParamTable
+          title="参数 36 ~ 71"
+          parameters={project.parameters.slice(36, 72)}
+          indexOffset={36}
+          onChange={handleParamChange}
+        />
+      </div>
     </section>
   );
 };
