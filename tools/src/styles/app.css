@@ -424,6 +424,39 @@ button {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
+/* ===== Readonly state (parser page) ===== */
+
+.param-table-wrapper.readonly {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.param-table-wrapper.readonly::before {
+  content: '只读 · 解析结果不可编辑';
+  display: block;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.param-table input:read-only,
+.param-table select:disabled,
+.readonly-field {
+  opacity: 0.82;
+  cursor: default;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.param-table input:read-only:focus,
+.param-table select:disabled:focus,
+.readonly-field:focus {
+  box-shadow: none;
+  border-color: var(--border-soft);
+}
+
 /* ===== Header info card (parser page) ===== */
 
 .header-card {

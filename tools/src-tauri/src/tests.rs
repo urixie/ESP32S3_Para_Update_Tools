@@ -173,6 +173,59 @@ fn wrong_param_count_rejected() {
 }
 
 #[test]
+fn export_directly_rejects_duplicate_address() {
+    // export_encrypted_bin_bytes() must validate its own input — calling it
+    // directly (not via the Tauri command) with a duplicate address must
+    // return an Err instead of producing a broken bin file.
+    let mut params = build_sample();
+    params[5].address = 3; // collide with params[3].address
+    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    assert!(result.is_err(), "duplicate address must be rejected");
+    match result.unwrap_err() {
+        crate::error::AppError::ValidationFailed(_) => {}
+        other => panic!("expected ValidationFailed, got {:?}", other),
+    }
+}
+
+#[test]
+fn export_directly_rejects_empty_name() {
+    let mut params = build_sample();
+    params[12].name = "".to_string();
+    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    assert!(result.is_err(), "empty name must be rejected");
+}
+
+#[test]
+fn export_directly_rejects_missing_address() {
+    let mut params = build_sample();
+    params.remove(20);
+    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    assert!(result.is_err(), "wrong param count must be rejected");
+}
+
+#[test]
+fn header_payload_len_equals_plaintext_len() {
+    let params = build_sample();
+    let plaintext = crate::payload_codec::encode_payload(&params).expect("encode ok");
+    let bin = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+
+    // payload_len lives at Header offset 36, little-endian u32.
+    let payload_len = u32::from_le_bytes(bin[36..40].try_into().unwrap()) as usize;
+    assert_eq!(
+        payload_len,
+        plaintext.len(),
+        "payload_len must equal plaintext.len() (AES-GCM ciphertext length)"
+    );
+
+    // Body size = payload_len + tag_len (16)
+    assert_eq!(
+        bin.len(),
+        crate::bin_format::HEADER_SIZE + payload_len + 16,
+        "total file size = Header + ciphertext + tag"
+    );
+}
+
+#[test]
 fn default_project_is_valid() {
     let project = crate::project_file::default_project();
     let errors = validate_parameters(&project.parameters);

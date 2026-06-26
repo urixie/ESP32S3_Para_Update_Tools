@@ -4,6 +4,9 @@ use thiserror::Error;
 /// scenario the GUI should be able to display verbatim.
 #[derive(Error, Debug)]
 pub enum AppError {
+    #[error("参数校验失败: {0}")]
+    ValidationFailed(String),
+
     #[error("参数数量必须为 72，实际为 {0}")]
     InvalidParameterCount(usize),
 

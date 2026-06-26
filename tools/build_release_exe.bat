@@ -10,7 +10,7 @@ echo ========================================
 cd /d "%~dp0"
 
 echo.
-echo [1/7] Checking environment...
+echo [1/8] Checking environment...
 
 where node >nul 2>nul
 if errorlevel 1 (
@@ -36,7 +36,7 @@ if errorlevel 1 (
 echo [OK] Environment check passed.
 
 echo.
-echo [2/7] Installing npm dependencies...
+echo [2/8] Installing npm dependencies...
 call npm install
 if errorlevel 1 (
     echo [ERROR] npm install failed.
@@ -45,7 +45,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/7] Building frontend...
+echo [3/8] Building frontend...
 call npm run build
 if errorlevel 1 (
     echo [ERROR] Frontend build failed.
@@ -54,8 +54,17 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/7] Building Rust release exe...
+echo [4/8] Running Rust tests...
 cd /d "%~dp0src-tauri"
+call cargo test
+if errorlevel 1 (
+    echo [ERROR] Rust tests failed.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [5/8] Building Rust release exe...
 call cargo build --release
 if errorlevel 1 (
     echo [ERROR] Rust release build failed.
@@ -66,7 +75,7 @@ if errorlevel 1 (
 cd /d "%~dp0"
 
 echo.
-echo [5/7] Preparing release directory...
+echo [6/8] Preparing release directory...
 if not exist release (
     mkdir release
 )
@@ -89,7 +98,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [6/7] Writing release README...
+echo [7/8] Writing release README...
 (
 echo Param Bin Tool
 echo ==============
@@ -107,10 +116,12 @@ echo   4. This is not an installer. It is a directly runnable exe.
 echo   5. Windows WebView2 Runtime may be required on older Windows systems.
 echo   6. Fixed 72 parameters, addresses 0~71, fixed 48-byte Header + AES-GCM Payload.
 echo.
+echo For ESP32 firmware integration, see docs/bin_protocol.md.
+echo.
 ) > release\README.txt
 
 echo.
-echo [7/7] Done.
+echo [8/8] Done.
 echo ========================================
 echo Release exe generated:
 echo %~dp0release\ParamBinTool.exe

@@ -29,6 +29,7 @@ use crate::crypto::{
 use crate::error::AppError;
 use crate::model::{BinHeaderInfo, Parameter, ParsedBinInfo, PARAM_COUNT};
 use crate::payload_codec::{decode_payload, encode_payload};
+use crate::validator::validate_parameters;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
@@ -142,31 +143,57 @@ fn parse_header(header: &[u8]) -> Result<BinHeaderInfo, AppError> {
 }
 
 /// Encode parameters into a complete bin file (Header + ciphertext + tag).
+///
+/// `parameters` is validated here — any failure short-circuits with
+/// `AppError::ValidationFailed`. This makes the function safe to call from
+/// any code path, not just through the Tauri command layer.
+///
+/// The output bytes are:
+///
+/// ```text
+/// [48-byte Header][ciphertext (== plaintext.len() bytes)][16-byte GCM tag]
+/// ```
+///
+/// The 48-byte Header is also fed into AES-GCM as AAD, so any tampering
+/// with the Header (including `payload_len`) invalidates the tag.
 pub fn export_encrypted_bin_bytes(
     parameters: &[Parameter],
     product_id: u32,
     key_id: u32,
 ) -> Result<Vec<u8>, AppError> {
+    // 1. Validate first so we never emit a malformed bin file, no matter
+    //    who the caller is (Tauri command, future CLI, unit test, etc.).
+    let errors = validate_parameters(parameters);
+    if !errors.is_empty() {
+        let summary = errors
+            .into_iter()
+            .map(|e| e.message)
+            .collect::<Vec<_>>()
+            .join("; ");
+        return Err(AppError::ValidationFailed(summary));
+    }
+
+    // 2. Look up the key material.
     let key = get_key_by_id(product_id, key_id).ok_or(AppError::KeyNotFound {
         product_id,
         key_id,
     })?;
 
+    // 3. Build plaintext payload, then a fresh random nonce.
     let plaintext = encode_payload(parameters)?;
     let nonce = generate_nonce();
 
-    // Two-pass approach: we don't know the ciphertext length until we have
-    // computed it, but AES-GCM needs the AAD (= Header) up front. Solution:
-    // encrypt with a placeholder AAD first, then re-encrypt with the real
-    // Header once payload_len is known.
-    let placeholder_header = build_header(product_id, key_id, &nonce, 0);
-    let placeholder_ct =
-        encrypt_payload_with_aad(&key, &nonce, &placeholder_header, &plaintext)?;
-    let cipher_len = (placeholder_ct.len() - TAG_LEN) as u32;
-
+    // 4. AES-GCM is a stream cipher: ciphertext length == plaintext length,
+    //    plus a fixed 16-byte authentication tag at the end. Because the
+    //    Header already contains `payload_len` (= ciphertext length, NOT
+    //    including the tag), we can build the Header up front using the
+    //    known plaintext length and only call AES-GCM once.
+    let cipher_len = plaintext.len() as u32;
     let header = build_header(product_id, key_id, &nonce, cipher_len);
+
     let ciphertext_and_tag = encrypt_payload_with_aad(&key, &nonce, &header, &plaintext)?;
 
+    // 5. Assemble final file: Header || ciphertext || tag.
     let mut out = Vec::with_capacity(HEADER_SIZE + ciphertext_and_tag.len());
     out.extend_from_slice(&header);
     out.extend_from_slice(&ciphertext_and_tag);
