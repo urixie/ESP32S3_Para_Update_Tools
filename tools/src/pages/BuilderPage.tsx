@@ -153,9 +153,7 @@ export const BuilderPage: React.FC = () => {
       <div className="panel-header">
         <div>
           <h2 className="section-title">参数构建</h2>
-          <p className="section-subtitle">
-            编辑 72 个固定参数，保存工程文件或生成加密 bin 文件。加密使用 AES-256-GCM。
-          </p>
+          <p className="section-subtitle">72 个固定参数 · 地址 0~71</p>
         </div>
       </div>
 

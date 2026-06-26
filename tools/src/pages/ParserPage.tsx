@@ -71,9 +71,7 @@ export const ParserPage: React.FC = () => {
       <div className="panel-header">
         <div>
           <h2 className="section-title">参数解析</h2>
-          <p className="section-subtitle">
-            加载由本工具生成的加密 bin 文件，使用 AES-256-GCM 解密并展示完整参数表。
-          </p>
+          <p className="section-subtitle">解析 UEPB 加密参数文件</p>
         </div>
       </div>
 
