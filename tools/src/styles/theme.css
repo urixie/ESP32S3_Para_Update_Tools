@@ -1,0 +1,18 @@
+:root {
+  --bg-main: #070b14;
+  --bg-panel: #0d1320;
+  --bg-card: #111827;
+  --bg-card-hover: #162033;
+  --border-soft: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(34, 211, 238, 0.35);
+  --text-main: #e5eefb;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --accent-cyan: #22d3ee;
+  --accent-blue: #3b82f6;
+  --accent-green: #34d399;
+  --accent-purple: #a78bfa;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
