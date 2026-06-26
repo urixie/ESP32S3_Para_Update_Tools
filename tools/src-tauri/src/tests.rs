@@ -226,6 +226,53 @@ fn header_payload_len_equals_plaintext_len() {
 }
 
 #[test]
+fn name_30_chinese_chars_ok() {
+    // Exactly 30 Chinese characters — should pass both the 30-char rule
+    // and the 96-byte rule (30 chars * 3 bytes = 90 bytes).
+    let mut params = build_sample();
+    params[0].name = "参".repeat(30);
+    assert_eq!(params[0].name.chars().count(), 30);
+    assert!(params[0].name.as_bytes().len() <= 96);
+    let errors = crate::validator::validate_parameters(&params);
+    assert!(
+        errors.is_empty(),
+        "30 Chinese chars should be valid, got {:?}",
+        errors
+    );
+}
+
+#[test]
+fn name_31_chinese_chars_rejected() {
+    // 31 Chinese chars -> 93 bytes (still under 96) but over the 30-char
+    // limit, so validation must fail.
+    let mut params = build_sample();
+    params[0].name = "参".repeat(31);
+    assert_eq!(params[0].name.chars().count(), 31);
+    assert!(params[0].name.as_bytes().len() <= 96);
+    let errors = crate::validator::validate_parameters(&params);
+    assert!(
+        !errors.is_empty(),
+        "31 Chinese chars must be rejected by validation"
+    );
+    assert!(
+        errors
+            .iter()
+            .any(|e| e.field.as_deref() == Some("name") && e.message.contains("30")),
+        "error must mention the 30-char limit, got {:?}",
+        errors
+    );
+}
+
+#[test]
+fn export_rejects_31_chinese_chars() {
+    // The export function must not produce a bin when validation fails.
+    let mut params = build_sample();
+    params[0].name = "参".repeat(31);
+    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    assert!(result.is_err(), "export must reject names longer than 30 chars");
+}
+
+#[test]
 fn default_project_is_valid() {
     let project = crate::project_file::default_project();
     let errors = validate_parameters(&project.parameters);

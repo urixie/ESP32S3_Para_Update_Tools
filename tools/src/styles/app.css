@@ -339,6 +339,7 @@ button {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.84rem;
+  table-layout: fixed;
 }
 
 .param-table thead {
@@ -363,6 +364,30 @@ button {
 .param-table td {
   padding: 0.4rem 0.85rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+  vertical-align: middle;
+}
+
+/* Column widths */
+.param-table .col-address,
+.param-table th.col-address,
+.param-table td.addr-cell {
+  width: 64px;
+}
+
+.param-table .col-name,
+.param-table th.col-name,
+.param-table td.name-cell {
+  width: 320px;
+  max-width: 320px;
+}
+
+.param-table .col-value {
+  width: 120px;
+}
+
+.param-table .col-type,
+.param-table .col-permission {
+  width: 180px;
 }
 
 .param-table tbody tr:hover {
@@ -400,6 +425,25 @@ button {
   color: var(--text-main);
   font-size: 0.82rem;
   outline: none;
+}
+
+.name-input {
+  max-width: 300px;
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name-counter {
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  min-width: 38px;
+  text-align: right;
+  user-select: none;
 }
 
 .name-input:focus,
@@ -455,6 +499,61 @@ button {
 .readonly-field:focus {
   box-shadow: none;
   border-color: var(--border-soft);
+}
+
+/* ===== Segmented (mutually exclusive) buttons ===== */
+
+.segmented-control {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.segmented-control button {
+  border: 0;
+  border-right: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.32rem 0.65rem;
+  min-width: 58px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  border-radius: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segmented-control button:last-child {
+  border-right: 0;
+}
+
+.segmented-control button:hover:not(:disabled) {
+  background: rgba(34, 211, 238, 0.10);
+  color: var(--text-main);
+}
+
+.segmented-control button.active {
+  background: rgba(34, 211, 238, 0.18);
+  color: var(--text-main);
+  box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.12);
+}
+
+.segmented-control button:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
+/* Permission column gets a subtle tint to make "可见/隐藏" pop visually */
+.segmented-control.permission button.active.is-visible {
+  background: rgba(52, 211, 153, 0.18);
+  box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.14);
+}
+
+.segmented-control.permission button.active.is-hidden {
+  background: rgba(248, 113, 113, 0.14);
+  box-shadow: inset 0 0 10px rgba(248, 113, 113, 0.12);
 }
 
 /* ===== Header info card (parser page) ===== */

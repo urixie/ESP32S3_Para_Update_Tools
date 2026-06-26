@@ -48,7 +48,22 @@ export interface ParsedBinInfo {
 export const PARAM_COUNT = 72;
 export const ADDR_MIN = 0;
 export const ADDR_MAX = 71;
+export const NAME_MAX_CHARS = 30;
 export const NAME_MAX_BYTES = 96;
+
+/**
+ * Truncate a string to at most NAME_MAX_CHARS Unicode characters (glyphs).
+ *
+ * JavaScript `String.prototype.length` and the HTML `maxLength` attribute
+ * count UTF-16 code units, not Unicode characters. For BMP characters they
+ * happen to match, but anything outside the BMP (rare but possible) would
+ * be double-counted. Spreading the string into an Array produces an array
+ * where each element is exactly one Unicode code point, so slicing and
+ * joining gives us a safe, char-count-aware truncation that mirrors
+ * `name.chars().count() <= NAME_MAX_CHARS` on the Rust side.
+ */
+export const limitNameChars = (value: string): string =>
+  Array.from(value).slice(0, NAME_MAX_CHARS).join('');
 
 export const createDefaultParameters = (): Parameter[] => {
   return Array.from({ length: PARAM_COUNT }, (_, index) => ({

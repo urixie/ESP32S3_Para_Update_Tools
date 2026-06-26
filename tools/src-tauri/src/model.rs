@@ -7,7 +7,13 @@ pub const PARAM_COUNT: usize = 72;
 pub const ADDR_MIN: u8 = 0;
 pub const ADDR_MAX: u8 = 71;
 
-/// Maximum length of a UTF-8 encoded parameter name in bytes.
+/// Maximum length of a parameter name in Unicode characters (used for the
+/// business rule "max 30 chinese characters / glyphs").
+pub const NAME_MAX_CHARS: usize = 30;
+
+/// Maximum length of a UTF-8 encoded parameter name in bytes. This is the
+/// protocol-level safety limit; `NAME_MAX_CHARS` is the user-facing limit
+/// and `NAME_MAX_BYTES` is the hard limit enforced on the wire.
 pub const NAME_MAX_BYTES: usize = 96;
 
 /// Type of a parameter (control vs protection).

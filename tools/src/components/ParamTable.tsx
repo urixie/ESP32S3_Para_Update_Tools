@@ -1,5 +1,12 @@
 import React from 'react';
-import { Parameter, ParamType, ParamPermission, paramTypeLabel, permissionLabel } from '../types/parameter';
+import {
+  Parameter,
+  ParamPermission,
+  ParamType,
+  limitNameChars,
+  paramTypeLabel,
+  permissionLabel,
+} from '../types/parameter';
 
 interface ParamTableProps {
   parameters: Parameter[];
@@ -15,7 +22,12 @@ const clampU16 = (v: number): number => {
   return Math.floor(v);
 };
 
-export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange, highlightAddress, readonly = false }) => {
+export const ParamTable: React.FC<ParamTableProps> = ({
+  parameters,
+  onChange,
+  highlightAddress,
+  readonly = false,
+}) => {
   // In readonly mode the caller must still pass an `onChange`, but we ignore
   // it. We assert against accidental state writes by wrapping the callback.
   const safeOnChange = readonly
@@ -27,13 +39,20 @@ export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange, hi
   return (
     <div className={`param-table-wrapper ${readonly ? 'readonly' : ''}`}>
       <table className="param-table">
+        <colgroup>
+          <col className="col-address" />
+          <col className="col-name" />
+          <col className="col-value" />
+          <col className="col-type" />
+          <col className="col-permission" />
+        </colgroup>
         <thead>
           <tr>
-            <th style={{ width: 64 }}>地址</th>
-            <th>名称</th>
-            <th style={{ width: 120 }}>默认值</th>
-            <th style={{ width: 100 }}>类型</th>
-            <th style={{ width: 100 }}>权限</th>
+            <th className="col-address">地址</th>
+            <th className="col-name">名称</th>
+            <th className="col-value">默认值</th>
+            <th className="col-type">类型</th>
+            <th className="col-permission">权限</th>
           </tr>
         </thead>
         <tbody>
@@ -44,14 +63,21 @@ export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange, hi
                 <td className="addr-cell">
                   <span className="addr-badge">{param.address}</span>
                 </td>
-                <td>
+                <td className="name-cell">
                   <input
                     className={`name-input ${fieldClass}`}
                     value={param.name}
-                    onChange={(e) => safeOnChange(index, { name: e.target.value })}
+                    maxLength={30}
+                    title="最多 30 个字符"
+                    onChange={(e) => safeOnChange(index, { name: limitNameChars(e.target.value) })}
                     placeholder={readonly ? '' : `参数 ${param.address}`}
                     readOnly={readonly}
                   />
+                  {!readonly && (
+                    <span className="name-counter">
+                      {Array.from(param.name).length}/30
+                    </span>
+                  )}
                 </td>
                 <td>
                   <input
@@ -68,26 +94,56 @@ export const ParamTable: React.FC<ParamTableProps> = ({ parameters, onChange, hi
                   />
                 </td>
                 <td>
-                  <select
-                    className={`type-select ${fieldClass}`}
-                    value={param.paramType}
-                    onChange={(e) => safeOnChange(index, { paramType: e.target.value as ParamType })}
-                    disabled={readonly}
-                  >
-                    <option value="control">{paramTypeLabel('control')}</option>
-                    <option value="protection">{paramTypeLabel('protection')}</option>
-                  </select>
+                  <div className={`segmented-control type ${fieldClass}`}>
+                    <button
+                      type="button"
+                      className={param.paramType === 'control' ? 'active' : ''}
+                      onClick={() => safeOnChange(index, { paramType: 'control' as ParamType })}
+                      disabled={readonly}
+                    >
+                      {paramTypeLabel('control')}
+                    </button>
+                    <button
+                      type="button"
+                      className={param.paramType === 'protection' ? 'active' : ''}
+                      onClick={() => safeOnChange(index, { paramType: 'protection' as ParamType })}
+                      disabled={readonly}
+                    >
+                      {paramTypeLabel('protection')}
+                    </button>
+                  </div>
                 </td>
                 <td>
-                  <select
-                    className={`type-select ${fieldClass}`}
-                    value={param.permission}
-                    onChange={(e) => safeOnChange(index, { permission: e.target.value as ParamPermission })}
-                    disabled={readonly}
-                  >
-                    <option value="visible">{permissionLabel('visible')}</option>
-                    <option value="hidden">{permissionLabel('hidden')}</option>
-                  </select>
+                  <div className={`segmented-control permission ${fieldClass}`}>
+                    <button
+                      type="button"
+                      className={
+                        param.permission === 'visible'
+                          ? 'active is-visible'
+                          : ''
+                      }
+                      onClick={() =>
+                        safeOnChange(index, { permission: 'visible' as ParamPermission })
+                      }
+                      disabled={readonly}
+                    >
+                      {permissionLabel('visible')}
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        param.permission === 'hidden'
+                          ? 'active is-hidden'
+                          : ''
+                      }
+                      onClick={() =>
+                        safeOnChange(index, { permission: 'hidden' as ParamPermission })
+                      }
+                      disabled={readonly}
+                    >
+                      {permissionLabel('hidden')}
+                    </button>
+                  </div>
                 </td>
               </tr>
             );

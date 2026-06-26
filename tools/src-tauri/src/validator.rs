@@ -2,7 +2,9 @@
 //! can show every problem at once instead of forcing the user to fix them one
 //! at a time.
 
-use crate::model::{Parameter, ValidationError, ADDR_MAX, ADDR_MIN, NAME_MAX_BYTES, PARAM_COUNT};
+use crate::model::{
+    Parameter, ValidationError, ADDR_MAX, ADDR_MIN, NAME_MAX_BYTES, NAME_MAX_CHARS, PARAM_COUNT,
+};
 
 /// Run every check we care about. Returns an empty Vec if the parameters are
 /// valid, otherwise one entry per failure.
@@ -28,7 +30,10 @@ pub fn validate_parameters(parameters: &[Parameter]) -> Vec<ValidationError> {
             errors.push(ValidationError {
                 address: Some(p.address),
                 field: Some("address".into()),
-                message: format!("参数地址非法: {}，允许范围 {}~{}", p.address, ADDR_MIN, ADDR_MAX),
+                message: format!(
+                    "参数地址非法: {}，允许范围 {}~{}",
+                    p.address, ADDR_MIN, ADDR_MAX
+                ),
             });
             continue;
         }
@@ -52,26 +57,44 @@ pub fn validate_parameters(parameters: &[Parameter]) -> Vec<ValidationError> {
         }
     }
 
-    // 3. Per-field checks
+    // 3. Per-field checks (name + value)
     for p in parameters {
+        // 3a. Empty / whitespace-only is rejected.
         if p.name.trim().is_empty() {
             errors.push(ValidationError {
                 address: Some(p.address),
                 field: Some("name".into()),
                 message: format!("参数名称不能为空: 地址 {}", p.address),
             });
-        } else {
-            let byte_len = p.name.as_bytes().len();
-            if byte_len > NAME_MAX_BYTES {
-                errors.push(ValidationError {
-                    address: Some(p.address),
-                    field: Some("name".into()),
-                    message: format!(
-                        "参数名称 UTF-8 字节长度超过 {} 字节: 地址 {}, 实际 {}",
-                        NAME_MAX_BYTES, p.address, byte_len
-                    ),
-                });
-            }
+            continue;
+        }
+
+        // 3b. Unicode char count limit (business rule, max 30 chars).
+        let char_len = p.name.chars().count();
+        if char_len > NAME_MAX_CHARS {
+            errors.push(ValidationError {
+                address: Some(p.address),
+                field: Some("name".into()),
+                message: format!(
+                    "参数名称不能超过 {} 个字符: 地址 {}, 实际 {}",
+                    NAME_MAX_CHARS, p.address, char_len
+                ),
+            });
+            // Don't bail out: still check the byte limit below so the user
+            // sees both problems at once.
+        }
+
+        // 3c. UTF-8 byte length limit (protocol safety, max 96 bytes).
+        let byte_len = p.name.as_bytes().len();
+        if byte_len > NAME_MAX_BYTES {
+            errors.push(ValidationError {
+                address: Some(p.address),
+                field: Some("name".into()),
+                message: format!(
+                    "参数名称 UTF-8 字节长度超过 {} 字节: 地址 {}, 实际 {}",
+                    NAME_MAX_BYTES, p.address, byte_len
+                ),
+            });
         }
     }
 
