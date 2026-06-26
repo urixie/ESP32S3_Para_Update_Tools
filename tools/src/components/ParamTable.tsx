@@ -79,7 +79,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     </span>
                   )}
                 </td>
-                <td>
+                <td className="value-cell">
                   <input
                     className={`value-input compact-number ${fieldClass}`}
                     type="number"
@@ -93,7 +93,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     disabled={readonly}
                   />
                 </td>
-                <td>
+                <td className="type-cell">
                   <div className={`segmented-control type ${fieldClass}`}>
                     <button
                       type="button"
@@ -113,7 +113,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     </button>
                   </div>
                 </td>
-                <td>
+                <td className="permission-cell">
                   <div className={`segmented-control permission ${fieldClass}`}>
                     <button
                       type="button"

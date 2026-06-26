@@ -327,18 +327,19 @@ button {
 /* ===== Param table ===== */
 
 .param-table-wrapper {
+  width: 100%;
+  overflow: auto;
   border-radius: var(--radius-md);
-  overflow: hidden;
   border: 1px solid var(--border-soft);
   background: var(--bg-card);
   max-height: 65vh;
-  overflow-y: auto;
 }
 
 .param-table {
-  width: 100%;
+  width: max-content;
+  min-width: 700px;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   table-layout: fixed;
 }
 
@@ -352,9 +353,9 @@ button {
 
 .param-table th {
   text-align: left;
-  padding: 0.42rem 0.5rem;
+  padding: 0.38rem 0.42rem;
   font-weight: 600;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -362,12 +363,14 @@ button {
 }
 
 .param-table td {
-  padding: 0.24rem 0.5rem;
+  padding: 0.22rem 0.42rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.07);
   vertical-align: middle;
 }
 
-/* Column widths */
+/* Column widths — kept in sync with the <colgroup> in ParamTable.tsx.
+   Each selector covers the <col>, the <th>, and the matching <td> cell
+   so the width is respected no matter which layout pass renders first. */
 .param-table .col-address,
 .param-table th.col-address,
 .param-table td.addr-cell {
@@ -377,17 +380,26 @@ button {
 .param-table .col-name,
 .param-table th.col-name,
 .param-table td.name-cell {
-  width: 300px;
-  max-width: 300px;
+  width: 280px;
+  max-width: 280px;
 }
 
-.param-table .col-value {
-  width: 88px;
+.param-table .col-value,
+.param-table th.col-value,
+.param-table td.value-cell {
+  width: 86px;
 }
 
 .param-table .col-type,
-.param-table .col-permission {
-  width: 132px;
+.param-table th.col-type,
+.param-table td.type-cell {
+  width: 118px;
+}
+
+.param-table .col-permission,
+.param-table th.col-permission,
+.param-table td.permission-cell {
+  width: 118px;
 }
 
 .param-table tbody tr:hover {
@@ -415,8 +427,7 @@ button {
 }
 
 .name-input,
-.value-input,
-.type-select {
+.value-input {
   width: 100%;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid var(--border-soft);
@@ -428,27 +439,26 @@ button {
 }
 
 .name-input {
-  max-width: 270px;
+  max-width: 235px;
 }
 
 .name-cell {
   display: flex;
   align-items: center;
-  gap: 0.32rem;
+  gap: 0.25rem;
 }
 
 .name-counter {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   color: var(--text-subtle);
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-  min-width: 32px;
+  min-width: 30px;
   text-align: right;
   user-select: none;
 }
 
 .name-input:focus,
-.value-input:focus,
-.type-select:focus {
+.value-input:focus {
   border-color: var(--accent-cyan);
   box-shadow: 0 0 0 2px rgba(34, 211, 238, 0.18);
 }
@@ -456,23 +466,10 @@ button {
 .value-input.compact-number {
   width: 10ch;
   max-width: 10ch;
-  min-width: 8ch;
+  min-width: 7ch;
   text-align: right;
-  padding-left: 0.35rem;
-  padding-right: 0.35rem;
-}
-
-/* Legacy dropdown style retained so any stray <select> still renders OK,
-   but the active UI is .segmented-control. */
-.type-select {
-  appearance: none;
-  cursor: pointer;
-  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
-    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
-  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
-  background-size: 5px 5px;
-  background-repeat: no-repeat;
-  padding-right: 1.6rem;
+  padding-left: 0.28rem;
+  padding-right: 0.28rem;
 }
 
 .value-input {
@@ -528,10 +525,10 @@ button {
   border-right: 1px solid var(--border-soft);
   background: transparent;
   color: var(--text-muted);
-  padding: 0.26rem 0.48rem;
-  min-width: 46px;
+  padding: 0.22rem 0.38rem;
+  min-width: 42px;
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   border-radius: 0;
   transition: background 0.15s ease, color 0.15s ease;
 }
