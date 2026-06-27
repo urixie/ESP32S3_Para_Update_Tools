@@ -110,55 +110,121 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     />
                   </td>
                   <td className="type-cell">
-                    <div className={`segmented-control type ${fieldClass}`}>
-                      <button
-                        type="button"
-                        className={param.paramType === 'control' ? 'active' : ''}
-                        onClick={() => emitChange(index, { paramType: 'control' as ParamType })}
-                        disabled={readonly}
+                    <div className={`checkbox-group type ${fieldClass}`}>
+                      <label
+                        className={`checkbox-option ${param.paramType === 'control' ? 'is-checked' : ''}`}
                       >
-                        {paramTypeLabel('control')}
-                      </button>
-                      <button
-                        type="button"
-                        className={param.paramType === 'protection' ? 'active' : ''}
-                        onClick={() => emitChange(index, { paramType: 'protection' as ParamType })}
-                        disabled={readonly}
+                        <input
+                          type="checkbox"
+                          checked={param.paramType === 'control'}
+                          // `readOnly` keeps the HTML checkbox non-mutable per
+                          // spec so the browser will not toggle the underlying
+                          // `checked` DOM property on click. We then drive the
+                          // state purely from React + onClick below — no more
+                          // flicker where both rows look ticked before React
+                          // re-renders, and no more trying to read the
+                          // post-toggle DOM state in the click handler.
+                          readOnly={!readonly}
+                          disabled={readonly}
+                          onClick={() => {
+                            if (param.paramType !== 'control') {
+                              emitChange(index, {
+                                paramType: 'control' as ParamType,
+                              });
+                            }
+                          }}
+                          onChange={() => {
+                            // Safety net for the rare browser that still
+                            // toggles `checked` despite `readOnly`. Mirror the
+                            // desired state so DOM and React stay in sync.
+                            if (param.paramType !== 'control') {
+                              emitChange(index, {
+                                paramType: 'control' as ParamType,
+                              });
+                            }
+                          }}
+                        />
+                        <span>{paramTypeLabel('control')}</span>
+                      </label>
+                      <label
+                        className={`checkbox-option ${param.paramType === 'protection' ? 'is-checked' : ''}`}
                       >
-                        {paramTypeLabel('protection')}
-                      </button>
+                        <input
+                          type="checkbox"
+                          checked={param.paramType === 'protection'}
+                          readOnly={!readonly}
+                          disabled={readonly}
+                          onClick={() => {
+                            if (param.paramType !== 'protection') {
+                              emitChange(index, {
+                                paramType: 'protection' as ParamType,
+                              });
+                            }
+                          }}
+                          onChange={() => {
+                            if (param.paramType !== 'protection') {
+                              emitChange(index, {
+                                paramType: 'protection' as ParamType,
+                              });
+                            }
+                          }}
+                        />
+                        <span>{paramTypeLabel('protection')}</span>
+                      </label>
                     </div>
                   </td>
                   <td className="permission-cell">
-                    <div className={`segmented-control permission ${fieldClass}`}>
-                      <button
-                        type="button"
-                        className={
-                          param.permission === 'visible'
-                            ? 'active is-visible'
-                            : ''
-                        }
-                        onClick={() =>
-                          emitChange(index, { permission: 'visible' as ParamPermission })
-                        }
-                        disabled={readonly}
+                    <div className={`checkbox-group permission ${fieldClass}`}>
+                      <label
+                        className={`checkbox-option is-visible ${param.permission === 'visible' ? 'is-checked' : ''}`}
                       >
-                        {permissionLabel('visible')}
-                      </button>
-                      <button
-                        type="button"
-                        className={
-                          param.permission === 'hidden'
-                            ? 'active is-hidden'
-                            : ''
-                        }
-                        onClick={() =>
-                          emitChange(index, { permission: 'hidden' as ParamPermission })
-                        }
-                        disabled={readonly}
+                        <input
+                          type="checkbox"
+                          checked={param.permission === 'visible'}
+                          readOnly={!readonly}
+                          disabled={readonly}
+                          onClick={() => {
+                            if (param.permission !== 'visible') {
+                              emitChange(index, {
+                                permission: 'visible' as ParamPermission,
+                              });
+                            }
+                          }}
+                          onChange={() => {
+                            if (param.permission !== 'visible') {
+                              emitChange(index, {
+                                permission: 'visible' as ParamPermission,
+                              });
+                            }
+                          }}
+                        />
+                        <span>{permissionLabel('visible')}</span>
+                      </label>
+                      <label
+                        className={`checkbox-option is-hidden ${param.permission === 'hidden' ? 'is-checked' : ''}`}
                       >
-                        {permissionLabel('hidden')}
-                      </button>
+                        <input
+                          type="checkbox"
+                          checked={param.permission === 'hidden'}
+                          readOnly={!readonly}
+                          disabled={readonly}
+                          onClick={() => {
+                            if (param.permission !== 'hidden') {
+                              emitChange(index, {
+                                permission: 'hidden' as ParamPermission,
+                              });
+                            }
+                          }}
+                          onChange={() => {
+                            if (param.permission !== 'hidden') {
+                              emitChange(index, {
+                                permission: 'hidden' as ParamPermission,
+                              });
+                            }
+                          }}
+                        />
+                        <span>{permissionLabel('hidden')}</span>
+                      </label>
                     </div>
                   </td>
                 </tr>

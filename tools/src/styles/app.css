@@ -901,59 +901,79 @@ button {
   border-color: var(--border-soft);
 }
 
-/* ===== Segmented (mutually exclusive) buttons ===== */
-
-.segmented-control {
-  display: inline-flex;
-  gap: 0;
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.85);
-}
-
-.segmented-control button {
-  border: 0;
-  border-right: 1px solid var(--border-soft);
-  background: transparent;
-  color: var(--text-muted);
-  padding: 0.18rem 0.34rem;
-  min-width: 40px;
+/* Restore the interactive look for read-only checkboxes. The HTML
+   `readOnly` attribute is being used here as a spec-blessed way to
+   suppress the browser's native toggle on click — these inputs are
+   still wired up via React `onClick`, so they should not pick up the
+   muted readonly styling that targets text inputs. */
+.param-table input[type="checkbox"]:read-only {
+  opacity: 1;
   cursor: pointer;
+  background: transparent;
+}
+
+/* ===== Mutually exclusive checkboxes (type / permission columns) =====
+   Each row still has a forced binary state (one type + one permission),
+   but the input UI is now a pair of checkboxes that auto-uncheck their
+   peer when one is ticked. The `.is-checked` class is the React-rendered
+   source of truth — the underlying `<input>` is fully controlled. */
+
+.checkbox-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   font-size: 0.74rem;
-  border-radius: 0;
-  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.segmented-control button:last-child {
-  border-right: 0;
+.checkbox-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-muted);
+  padding: 0.06rem 0.20rem;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.segmented-control button:hover:not(:disabled) {
+.checkbox-option:hover {
+  color: var(--text-main);
+}
+
+.checkbox-option.is-checked {
+  color: var(--text-main);
   background: rgba(34, 211, 238, 0.10);
-  color: var(--text-main);
 }
 
-.segmented-control button.active {
-  background: rgba(34, 211, 238, 0.18);
-  color: var(--text-main);
-  box-shadow: inset 0 0 10px rgba(34, 211, 238, 0.12);
+.checkbox-option input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  width: 13px;
+  height: 13px;
+  accent-color: var(--accent-cyan);
 }
 
-.segmented-control button:disabled {
-  opacity: 0.72;
+.checkbox-option input[type="checkbox"]:disabled {
   cursor: default;
 }
 
-/* Permission column gets a subtle tint to make "可见/隐藏" pop visually */
-.segmented-control.permission button.active.is-visible {
+/* Permission column keeps the visible/hidden color cues from the old
+   segmented look so "可见" (green) and "隐藏" (red) still pop visually. */
+.checkbox-group.permission .checkbox-option.is-visible.is-checked {
   background: rgba(52, 211, 153, 0.18);
-  box-shadow: inset 0 0 10px rgba(52, 211, 153, 0.14);
 }
 
-.segmented-control.permission button.active.is-hidden {
+.checkbox-group.permission .checkbox-option.is-visible.is-checked input[type="checkbox"] {
+  accent-color: rgb(52, 211, 153);
+}
+
+.checkbox-group.permission .checkbox-option.is-hidden.is-checked {
   background: rgba(248, 113, 113, 0.14);
-  box-shadow: inset 0 0 10px rgba(248, 113, 113, 0.12);
+}
+
+.checkbox-group.permission .checkbox-option.is-hidden.is-checked input[type="checkbox"] {
+  accent-color: rgb(248, 113, 113);
 }
 
 /* ===== Header info card (parser page) ===== */
