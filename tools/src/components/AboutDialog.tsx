@@ -107,7 +107,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             <h3>注意事项</h3>
             <ul>
               <li>参数地址固定为 0~71，不可增删。</li>
-              <li>参数名称最多 30 个字符。</li>
+              <li>参数名称最多 20 个字符。</li>
               <li>默认值范围为 0~65535。</li>
               <li>隐藏参数在 ESP32 客户界面中应不可见。</li>
               <li>工程文件是内部明文文件，发布给 ESP32 的文件应使用加密 bin。</li>

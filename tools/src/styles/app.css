@@ -482,7 +482,7 @@ button {
 }
 
 .param-table th {
-  text-align: left;
+  text-align: center;
   padding: 0.32rem 0.32rem;
   font-weight: 700;
   font-size: 0.72rem;
@@ -525,7 +525,7 @@ button {
 .param-table .col-permission,
 .param-table th.col-permission,
 .param-table td.permission-cell {
-  width: 82px;
+  width: 118px;
 }
 
 .param-table tbody tr {
@@ -538,6 +538,13 @@ button {
 
 .param-table tbody tr.highlight {
   background: rgba(239, 68, 68, 0.10);
+}
+
+.addr-cell,
+.value-cell,
+.type-cell,
+.permission-cell {
+  text-align: center;
 }
 
 .addr-cell {
@@ -556,6 +563,10 @@ button {
   font-weight: 700;
 }
 
+.name-cell {
+  text-align: center;
+}
+
 .name-input,
 .value-input {
   width: 100%;
@@ -570,6 +581,12 @@ button {
     border-color 0.16s ease,
     box-shadow 0.16s ease,
     background 0.16s ease;
+}
+
+.name-input {
+  display: block;
+  max-width: 168px;
+  margin: 0 auto;
 }
 
 .name-input:hover,
@@ -604,7 +621,7 @@ button {
   border-color: var(--border-soft);
 }
 
-/* ===== Capsule Segmented Control: Type Column ===== */
+/* ===== Capsule Segmented Control: Type / Permission Columns ===== */
 
 .segmented-control {
   display: inline-flex;
@@ -676,54 +693,27 @@ button {
     0 0 14px rgba(167, 139, 250, 0.12);
 }
 
-.type-cell {
-  text-align: left;
+.segmented-control button.active.visible {
+  color: #d1fae5;
+  background:
+    linear-gradient(180deg, rgba(16, 185, 129, 0.30), rgba(5, 150, 105, 0.22));
+  box-shadow:
+    inset 0 0 0 1px rgba(16, 185, 129, 0.38),
+    0 0 14px rgba(16, 185, 129, 0.12);
 }
 
-.type-segment {
+.segmented-control button.active.hidden {
+  color: #e2e8f0;
+  background:
+    linear-gradient(180deg, rgba(100, 116, 139, 0.28), rgba(51, 65, 85, 0.22));
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.30),
+    0 0 14px rgba(148, 163, 184, 0.08);
+}
+
+.type-segment,
+.permission-segment {
   margin-top: 1px;
-}
-
-/* ===== Permission Checkbox ===== */
-
-.checkbox-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.20rem;
-  cursor: pointer;
-  user-select: none;
-  color: var(--text-muted);
-  padding: 0.06rem 0.18rem;
-  border-radius: 5px;
-  transition:
-    color 0.15s ease,
-    background 0.15s ease;
-}
-
-.checkbox-option:hover {
-  color: var(--text-main);
-  background: rgba(34, 211, 238, 0.06);
-}
-
-.checkbox-option.is-checked {
-  color: var(--text-main);
-  background: rgba(34, 211, 238, 0.10);
-}
-
-.checkbox-option input[type='checkbox'] {
-  margin: 0;
-  cursor: pointer;
-  width: 13px;
-  height: 13px;
-  accent-color: var(--accent-cyan);
-}
-
-.checkbox-option.permission-toggle.is-checked {
-  background: rgba(16, 185, 129, 0.18);
-}
-
-.checkbox-option.permission-toggle.is-checked input[type='checkbox'] {
-  accent-color: var(--accent-green);
 }
 
 /* ===== Readonly Tags ===== */

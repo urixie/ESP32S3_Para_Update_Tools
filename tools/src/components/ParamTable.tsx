@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  NAME_MAX_CHARS,
   Parameter,
   ParamPermission,
   ParamType,
@@ -78,8 +79,8 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     <input
                       className={`name-input ${fieldClass}`}
                       value={param.name}
-                      maxLength={30}
-                      title="最多 30 个字符"
+                      maxLength={NAME_MAX_CHARS}
+                      title={`最多 ${NAME_MAX_CHARS} 个字符`}
                       onChange={(e) =>
                         emitChange(index, { name: limitNameChars(e.target.value) })
                       }
@@ -145,32 +146,33 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                         {permissionLabel(param.permission)}
                       </span>
                     ) : (
-                      <label
-                        className={`checkbox-option permission-toggle ${
-                          param.permission === 'visible' ? 'is-checked' : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={param.permission === 'visible'}
-                          readOnly
+                      <div className="segmented-control permission-segment" role="group" aria-label="参数权限">
+                        <button
+                          type="button"
+                          aria-pressed={param.permission === 'visible'}
+                          className={param.permission === 'visible' ? 'active visible' : ''}
                           onClick={() => {
-                            emitChange(index, {
-                              permission: (param.permission === 'visible'
-                                ? 'hidden'
-                                : 'visible') as ParamPermission,
-                            });
+                            if (param.permission !== 'visible') {
+                              emitChange(index, { permission: 'visible' as ParamPermission });
+                            }
                           }}
-                          onChange={() => {
-                            emitChange(index, {
-                              permission: (param.permission === 'visible'
-                                ? 'hidden'
-                                : 'visible') as ParamPermission,
-                            });
+                        >
+                          可见
+                        </button>
+
+                        <button
+                          type="button"
+                          aria-pressed={param.permission === 'hidden'}
+                          className={param.permission === 'hidden' ? 'active hidden' : ''}
+                          onClick={() => {
+                            if (param.permission !== 'hidden') {
+                              emitChange(index, { permission: 'hidden' as ParamPermission });
+                            }
                           }}
-                        />
-                        <span>{permissionLabel(param.permission)}</span>
-                      </label>
+                        >
+                          隐藏
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
