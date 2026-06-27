@@ -23,11 +23,6 @@ interface ParamTableProps {
    * to pass anything explicitly.
    */
   indexOffset?: number;
-  /**
-   * Optional small heading rendered above the table — used by the two-column
-   * layout on the builder / parser pages to label "0 ~ 35" vs "36 ~ 71".
-   */
-  title?: string;
 }
 
 const clampU16 = (v: number): number => {
@@ -43,7 +38,6 @@ export const ParamTable: React.FC<ParamTableProps> = ({
   highlightAddress,
   readonly = false,
   indexOffset = 0,
-  title,
 }) => {
   // In readonly mode the caller must still pass an `onChange`, but we ignore
   // it. We assert against accidental state writes by wrapping the callback.
@@ -62,7 +56,6 @@ export const ParamTable: React.FC<ParamTableProps> = ({
 
   return (
     <div className={`param-table-card ${readonly ? 'readonly' : ''}`}>
-      {title && <div className="param-table-title">{title}</div>}
       <div className={`param-table-wrapper ${readonly ? 'readonly' : ''}`}>
         <table className="param-table">
           <colgroup>

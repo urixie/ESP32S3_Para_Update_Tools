@@ -119,14 +119,12 @@ export const ParserPage: React.FC = () => {
           {parameters.length > 0 && (
             <div className="param-two-column">
               <ParamTable
-                title="参数 0 ~ 35"
                 parameters={parameters.slice(0, 36)}
                 indexOffset={0}
                 readonly
                 onChange={() => undefined}
               />
               <ParamTable
-                title="参数 36 ~ 71"
                 parameters={parameters.slice(36, 72)}
                 indexOffset={36}
                 readonly
