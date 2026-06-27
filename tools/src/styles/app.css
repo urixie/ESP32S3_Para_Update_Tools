@@ -27,9 +27,11 @@ button {
 /* ===== App Shell ===== */
 
 .app-shell {
+  height: 100vh;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
 }
 
 .top-bar {
@@ -97,6 +99,8 @@ button {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr);
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .side-nav {
@@ -139,7 +143,9 @@ button {
 .main-content {
   padding: 0.75rem 0.85rem 0.85rem 0.45rem;
   min-width: 0;
-  overflow: auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .bottom-bar {
@@ -295,6 +301,8 @@ button {
 /* ===== Panel ===== */
 
 .panel {
+  height: 100%;
+  min-height: 0;
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
@@ -315,14 +323,16 @@ button {
    Both BuilderPage and ParserPage use this layout: a sticky operation
    rail on the left and a scrollable content area on the right. */
 .page-panel {
-  min-height: calc(100vh - 150px);
+  height: 100%;
+  min-height: 0;
 }
 
 .page-workspace {
   display: grid;
   grid-template-columns: 210px minmax(0, 1fr);
   gap: 0.65rem;
-  align-items: start;
+  align-items: stretch;
+  height: 100%;
   min-height: 0;
 }
 
@@ -341,7 +351,9 @@ button {
 
 .page-main-panel {
   min-width: 0;
-  overflow: auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -689,9 +701,24 @@ button {
   display: grid;
   grid-template-columns: minmax(0, max-content) minmax(0, max-content);
   gap: 0.9rem;
-  align-items: start;
+  align-items: stretch;
   width: 100%;
-  overflow-x: auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* On the builder page the param tables are the entire right-hand content;
+   keep them locked to the workspace height so the wrapper scrolls instead
+   of the whole main panel. The parser page also lets its param tables use
+   the full height by default (raw JSON lives below in a collapsed <details>). */
+.builder-panel .page-main-panel {
+  overflow: hidden;
+}
+
+.builder-panel .param-two-column,
+.parser-panel .param-two-column {
+  height: 100%;
 }
 
 /* A single column's card: title (optional) + table wrapper. */
@@ -700,6 +727,8 @@ button {
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 
 .param-table-title {
@@ -716,7 +745,9 @@ button {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--bg-card);
-  max-height: 65vh;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
 }
 
 .param-table {
@@ -737,7 +768,7 @@ button {
 
 .param-table th {
   text-align: left;
-  padding: 0.34rem 0.36rem;
+  padding: 0.30rem 0.34rem;
   font-weight: 600;
   font-size: 0.72rem;
   color: var(--text-muted);
@@ -747,7 +778,7 @@ button {
 }
 
 .param-table td {
-  padding: 0.20rem 0.36rem;
+  padding: 0.16rem 0.34rem;
   border-bottom: 1px solid rgba(148, 163, 184, 0.07);
   vertical-align: middle;
 }
@@ -817,9 +848,9 @@ button {
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
-  padding: 0.32rem 0.5rem;
+  padding: 0.22rem 0.5rem;
   color: var(--text-main);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   outline: none;
 }
 
@@ -909,10 +940,10 @@ button {
   border-right: 1px solid var(--border-soft);
   background: transparent;
   color: var(--text-muted);
-  padding: 0.22rem 0.36rem;
+  padding: 0.18rem 0.34rem;
   min-width: 40px;
   cursor: pointer;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   border-radius: 0;
   transition: background 0.15s ease, color 0.15s ease;
 }

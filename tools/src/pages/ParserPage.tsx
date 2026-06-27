@@ -65,7 +65,7 @@ export const ParserPage: React.FC = () => {
   };
 
   return (
-    <section className="panel page-panel">
+    <section className="panel page-panel parser-panel">
       <div className="page-workspace">
         <aside className="page-side-panel parser-side-panel">
           <div className="side-panel-section">

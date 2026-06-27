@@ -149,7 +149,7 @@ export const BuilderPage: React.FC = () => {
   };
 
   return (
-    <section className="panel page-panel">
+    <section className="panel page-panel builder-panel">
       <div className="page-workspace">
         <aside className="page-side-panel builder-side-panel">
           <div className="side-panel-section">

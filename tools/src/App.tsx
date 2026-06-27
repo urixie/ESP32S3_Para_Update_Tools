@@ -49,10 +49,6 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      <footer className="bottom-bar">
-        <span>UEPB Format · v1 · AES-256-GCM · 72 参数 · 地址 0~71</span>
-      </footer>
-
       {aboutOpen && <AboutDialog onClose={() => setAboutOpen(false)} />}
     </div>
   );
