@@ -2,23 +2,21 @@ import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
-  BinHeaderInfo,
   Parameter,
   ParsedBinInfo,
 } from '../types/parameter';
 import { ParamTable } from '../components/ParamTable';
 
 interface StatusMessage {
-  kind: 'info' | 'success' | 'error';
+  kind: 'info' | 'error';
   text: string;
 }
 
 export const ParserPage: React.FC = () => {
-  const [status, setStatus] = useState<StatusMessage>({
+  const [status, setStatus] = useState<StatusMessage | null>({
     kind: 'info',
     text: '请选择由本工具生成的加密 bin 文件进行解析。',
   });
-  const [header, setHeader] = useState<BinHeaderInfo | null>(null);
   const [parameters, setParameters] = useState<Parameter[]>([]);
   const [filePath, setFilePath] = useState<string>('');
   const [busy, setBusy] = useState(false);
@@ -35,18 +33,15 @@ export const ParserPage: React.FC = () => {
         setStatus({ kind: 'info', text: '已取消选择。' });
         return;
       }
+
       setFilePath(path);
+      setParameters([]);
       setStatus({ kind: 'info', text: `正在解析: ${path}` });
 
       const parsed = (await invoke('parse_encrypted_bin_cmd', { path })) as ParsedBinInfo;
-      setHeader(parsed.header);
       setParameters(parsed.parameters);
-      setStatus({
-        kind: 'success',
-        text: `解析成功，共 ${parsed.parameters.length} 个参数。`,
-      });
+      setStatus(null);
     } catch (e) {
-      setHeader(null);
       setParameters([]);
       setStatus({
         kind: 'error',
@@ -58,7 +53,6 @@ export const ParserPage: React.FC = () => {
   };
 
   const handleClear = () => {
-    setHeader(null);
     setParameters([]);
     setFilePath('');
     setStatus({ kind: 'info', text: '已清空解析结果。' });
@@ -89,22 +83,9 @@ export const ParserPage: React.FC = () => {
             </div>
           )}
 
-          <div className={`status-card side-status status-${status.kind}`}>
-            {status.text}
-          </div>
-
-          {header && (
-            <div className="side-panel-section">
-              <div className="side-panel-title">文件头信息</div>
-              <div className="side-header-card">
-                <Field label="Magic" value={'"UEPB"'} />
-                <Field label="Header Size" value={`${header.headerSize} 字节`} />
-                <Field label="Format Version" value={`${header.formatVersion}`} />
-                <Field label="Nonce" value={header.nonceHex} mono />
-                <Field label="Ciphertext Len" value={`${header.ciphertextLen} 字节`} />
-                <Field label="Tag Len" value={`${header.tagLen} 字节`} />
-                <Field label="File Size" value={`${header.fileSize} 字节`} />
-              </div>
+          {status && (
+            <div className={`status-card side-status status-${status.kind}`}>
+              {status.text}
             </div>
           )}
         </aside>
@@ -127,7 +108,7 @@ export const ParserPage: React.FC = () => {
             </div>
           )}
 
-          {!header && parameters.length === 0 && (
+          {parameters.length === 0 && (
             <div className="empty-state">
               请在左侧选择加密 bin 文件进行解析
             </div>
@@ -137,16 +118,3 @@ export const ParserPage: React.FC = () => {
     </section>
   );
 };
-
-interface FieldProps {
-  label: string;
-  value: string;
-  mono?: boolean;
-}
-
-const Field: React.FC<FieldProps> = ({ label, value, mono }) => (
-  <div className="header-field">
-    <span className="header-field-label">{label}</span>
-    <span className={`header-field-value ${mono ? 'mono' : ''}`}>{value}</span>
-  </div>
-);
