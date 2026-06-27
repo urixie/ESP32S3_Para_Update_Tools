@@ -97,8 +97,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             <ol>
               <li>在左侧选择「参数构建」页面。</li>
               <li>编辑 72 个参数（地址 0~35 在左栏，36~71 在右栏）。</li>
-              <li>点击「一键校验」检查参数完整性。</li>
-              <li>校验通过后点击「生成加密 bin」导出文件。</li>
+              <li>点击「生成加密 bin」导出文件（导出前会自动校验参数，不通过会中止导出）。</li>
               <li>需要验证时，切换到「参数解析」页面加载 bin 文件。</li>
             </ol>
           </section>

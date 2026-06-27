@@ -91,21 +91,6 @@ export const BuilderPage: React.FC = () => {
     }
   };
 
-  const handleValidate = async () => {
-    try {
-      setBusy(true);
-      await invoke('validate_parameters_cmd', { params: project.parameters });
-      setValidationErrors([]);
-      setStatus({ kind: 'success', text: '校验通过，可以生成加密 bin 文件。' });
-    } catch (e) {
-      const errs = Array.isArray(e) ? (e as ValidationError[]) : [];
-      setValidationErrors(errs);
-      setStatus({ kind: 'error', text: `校验失败: ${errs.length} 项问题` });
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const handleExportBin = async () => {
     try {
       setBusy(true);
@@ -201,14 +186,10 @@ export const BuilderPage: React.FC = () => {
           <div className="side-panel-section action-section">
             <div className="side-panel-title">校验与导出</div>
             <div className="side-action-list export-actions">
-              <button className="secondary-primary" onClick={handleValidate} disabled={busy}>
-                一键校验
-              </button>
               <button className="primary primary-main" onClick={handleExportBin} disabled={busy}>
                 生成加密 bin
               </button>
             </div>
-            <div className="side-hint">导出前会自动重新校验 72 个参数。</div>
           </div>
 
           {status && (
