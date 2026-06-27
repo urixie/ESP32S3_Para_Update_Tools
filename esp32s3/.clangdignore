@@ -1,0 +1,4 @@
+build/**
+components/lvgl/examples/**
+components/lvgl/tests/**
+components/tinyusb/test/**

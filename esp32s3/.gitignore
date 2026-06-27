@@ -1,0 +1,36 @@
+# ESP-IDF build outputs
+/build/
+/.cache/
+/managed_components/
+/sdkconfig.old
+
+# Local editor and OS noise
+/.vscode/.browse.c_cpp.db*
+/.vscode/ipch/
+/.idea/
+*.swp
+*.swo
+*~
+Thumbs.db
+Desktop.ini
+
+# Gui Guider desktop simulator payloads.
+# Keep main_prj.guiguider, import assets, custom code, and generated firmware UI files.
+/Gui_Guider/main_prj/lvgl/
+/Gui_Guider/main_prj/lvgl-simulator/
+/Gui_Guider/main_prj/ports/linux/
+/Gui_Guider/main_prj/lib/native/
+/Gui_Guider/main_prj/temp/
+/Gui_Guider/main_prj/build/
+/Gui_Guider/main_prj/.cache/
+
+# Gui Guider local build artifacts
+/Gui_Guider/**/CMakeFiles/
+/Gui_Guider/**/CMakeCache.txt
+/Gui_Guider/**/cmake_install.cmake
+/Gui_Guider/**/*.o
+/Gui_Guider/**/*.obj
+/Gui_Guider/**/*.a
+/Gui_Guider/**/*.dll
+/Gui_Guider/**/*.exe
+/Gui_Guider/**/*.log

@@ -1,0 +1,19 @@
+{
+  "clangd.path": "C:\\Espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
+  "clangd.onConfigChanged": "restart",
+  "clangd.checkUpdates": true,
+  "clangd.restartAfterCrash": true,
+  "idf.espIdfPathWin": "C:/Espressif_5_4/Espressif/frameworks/esp-idf-v5.4/",
+  "idf.pythonInstallPath": "C:\\Espressif_5_4\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
+  "idf.espAdfPathWin": "C:\\Espressif_5_4\\esp-adf\\",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.portWin": "COM8",
+  "idf.toolsPathWin": "C:\\Espressif_5_4\\Espressif",
+  "idf.flashType": "UART",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "idf.currentSetup": "C:\\Espressif_5_5_4\\.espressif\\v5.5.4\\esp-idf"
+}
