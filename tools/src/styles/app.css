@@ -29,6 +29,8 @@ button {
   color: inherit;
 }
 
+/* ===== App Shell ===== */
+
 .app-shell {
   height: 100vh;
   min-height: 100vh;
@@ -73,7 +75,11 @@ button {
   font-size: 0.84rem;
   font-weight: 700;
   line-height: 1.25;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .side-nav button:hover {
@@ -101,6 +107,12 @@ button {
   letter-spacing: 0.04em;
 }
 
+.side-nav .about-button:hover {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.45);
+  color: var(--text-main);
+}
+
 .main-content {
   padding: 0.75rem 0.85rem 0.85rem 0.45rem;
   min-width: 0;
@@ -108,6 +120,8 @@ button {
   height: 100%;
   overflow: hidden;
 }
+
+/* ===== Common Panel Layout ===== */
 
 .panel {
   height: 100%;
@@ -198,7 +212,10 @@ button {
   padding: 0.42rem 0.5rem;
   outline: none;
   font-size: 0.8rem;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
 .side-field textarea {
@@ -220,6 +237,8 @@ button {
   box-shadow: var(--focus-ring);
 }
 
+/* ===== Left Action Buttons ===== */
+
 .side-action-list {
   display: flex;
   flex-direction: column;
@@ -236,7 +255,11 @@ button {
   cursor: pointer;
   font-size: 0.82rem;
   text-align: left;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .side-action-list button:hover:not(:disabled) {
@@ -268,13 +291,17 @@ button {
   font-weight: 800;
   text-align: center;
   color: #effcff;
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.08), 0 10px 26px rgba(34, 211, 238, 0.10);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.08),
+    0 10px 26px rgba(34, 211, 238, 0.10);
 }
 
 .side-action-list button.primary-main:hover:not(:disabled) {
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.30), rgba(59, 130, 246, 0.34));
   border-color: var(--accent-cyan);
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.18), 0 14px 30px rgba(34, 211, 238, 0.16);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.18),
+    0 14px 30px rgba(34, 211, 238, 0.16);
 }
 
 .side-hint {
@@ -283,6 +310,8 @@ button {
   color: var(--text-subtle);
   padding: 0 0.05rem;
 }
+
+/* ===== Status / Error ===== */
 
 .status-card {
   border-radius: var(--radius-md);
@@ -371,6 +400,12 @@ button {
   color: #cfe1ff;
 }
 
+.error-message {
+  flex: 1;
+}
+
+/* ===== File / Empty State ===== */
+
 .file-path-box {
   border: 1px solid var(--border-soft);
   background: rgba(15, 23, 42, 0.65);
@@ -397,6 +432,8 @@ button {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+
+/* ===== Param Table Layout ===== */
 
 .param-two-column {
   display: grid;
@@ -482,7 +519,7 @@ button {
 .param-table .col-type,
 .param-table th.col-type,
 .param-table td.type-cell {
-  width: 126px;
+  width: 118px;
 }
 
 .param-table .col-permission,
@@ -529,7 +566,10 @@ button {
   color: var(--text-main);
   font-size: 0.78rem;
   outline: none;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
 }
 
 .name-input:hover,
@@ -564,12 +604,87 @@ button {
   border-color: var(--border-soft);
 }
 
-.checkbox-group {
+/* ===== Capsule Segmented Control: Type Column ===== */
+
+.segmented-control {
   display: inline-flex;
   align-items: center;
-  gap: 0.36rem;
-  font-size: 0.74rem;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  max-width: 108px;
+  padding: 2px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(10, 18, 32, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 0 0 1px rgba(2, 6, 23, 0.18);
 }
+
+.segmented-control button {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0 0.38rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.12s ease;
+}
+
+.segmented-control button:hover {
+  color: var(--text-main);
+  background: rgba(148, 163, 184, 0.10);
+}
+
+.segmented-control button:active {
+  transform: scale(0.97);
+}
+
+.segmented-control button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.segmented-control button.active.control {
+  color: #c8fbff;
+  background:
+    linear-gradient(180deg, rgba(34, 211, 238, 0.28), rgba(8, 145, 178, 0.22));
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 238, 0.34),
+    0 0 14px rgba(34, 211, 238, 0.12);
+}
+
+.segmented-control button.active.protection {
+  color: #eee9ff;
+  background:
+    linear-gradient(180deg, rgba(167, 139, 250, 0.30), rgba(124, 58, 237, 0.22));
+  box-shadow:
+    inset 0 0 0 1px rgba(167, 139, 250, 0.36),
+    0 0 14px rgba(167, 139, 250, 0.12);
+}
+
+.type-cell {
+  text-align: left;
+}
+
+.type-segment {
+  margin-top: 1px;
+}
+
+/* ===== Permission Checkbox ===== */
 
 .checkbox-option {
   display: inline-flex;
@@ -580,7 +695,9 @@ button {
   color: var(--text-muted);
   padding: 0.06rem 0.18rem;
   border-radius: 5px;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
 }
 
 .checkbox-option:hover {
@@ -608,6 +725,8 @@ button {
 .checkbox-option.permission-toggle.is-checked input[type='checkbox'] {
   accent-color: var(--accent-green);
 }
+
+/* ===== Readonly Tags ===== */
 
 .readonly-tag {
   display: inline-flex;
@@ -651,6 +770,8 @@ button {
   background: rgba(148, 163, 184, 0.08);
   color: var(--text-muted);
 }
+
+/* ===== Header Info Card ===== */
 
 .header-field {
   display: flex;
@@ -706,6 +827,8 @@ button {
   font-size: 0.76rem;
   word-break: break-all;
 }
+
+/* ===== About Dialog ===== */
 
 .about-overlay {
   position: fixed;
@@ -770,6 +893,11 @@ button {
   line-height: 1;
 }
 
+.about-close:hover {
+  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.45);
+}
+
 .about-content {
   padding: 1rem 1.25rem;
   overflow-y: auto;
@@ -791,6 +919,12 @@ button {
   color: var(--accent-cyan);
 }
 
+.about-content ol,
+.about-content ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.2rem;
+}
+
 .about-footer {
   border-top: 1px solid var(--border-soft);
   display: flex;
@@ -805,6 +939,13 @@ button {
   padding: 0.55rem 1rem;
   cursor: pointer;
 }
+
+.about-footer button:hover {
+  background: rgba(34, 211, 238, 0.22);
+  border-color: rgba(34, 211, 238, 0.6);
+}
+
+/* ===== Scrollbars ===== */
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -823,6 +964,8 @@ button {
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.6);
 }
+
+/* ===== Responsive ===== */
 
 @media (max-width: 1180px) {
   .page-workspace {

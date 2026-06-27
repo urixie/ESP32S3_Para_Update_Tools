@@ -53,6 +53,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
             <col className="col-type" />
             <col className="col-permission" />
           </colgroup>
+
           <thead>
             <tr>
               <th className="col-address">地址</th>
@@ -62,9 +63,11 @@ export const ParamTable: React.FC<ParamTableProps> = ({
               <th className="col-permission">权限</th>
             </tr>
           </thead>
+
           <tbody>
             {parameters.map((param, index) => {
               const isHighlighted = highlightAddress === param.address;
+
               return (
                 <tr key={param.address} className={isHighlighted ? 'highlight' : undefined}>
                   <td className="addr-cell">
@@ -106,48 +109,32 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                         {paramTypeLabel(param.paramType)}
                       </span>
                     ) : (
-                      <div className="checkbox-group type">
-                        <label
-                          className={`checkbox-option ${param.paramType === 'control' ? 'is-checked' : ''}`}
+                      <div className="segmented-control type-segment" role="group" aria-label="参数类型">
+                        <button
+                          type="button"
+                          aria-pressed={param.paramType === 'control'}
+                          className={param.paramType === 'control' ? 'active control' : ''}
+                          onClick={() => {
+                            if (param.paramType !== 'control') {
+                              emitChange(index, { paramType: 'control' as ParamType });
+                            }
+                          }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={param.paramType === 'control'}
-                            readOnly
-                            onClick={() => {
-                              if (param.paramType !== 'control') {
-                                emitChange(index, { paramType: 'control' as ParamType });
-                              }
-                            }}
-                            onChange={() => {
-                              if (param.paramType !== 'control') {
-                                emitChange(index, { paramType: 'control' as ParamType });
-                              }
-                            }}
-                          />
-                          <span>{paramTypeLabel('control')}</span>
-                        </label>
+                          控制
+                        </button>
 
-                        <label
-                          className={`checkbox-option ${param.paramType === 'protection' ? 'is-checked' : ''}`}
+                        <button
+                          type="button"
+                          aria-pressed={param.paramType === 'protection'}
+                          className={param.paramType === 'protection' ? 'active protection' : ''}
+                          onClick={() => {
+                            if (param.paramType !== 'protection') {
+                              emitChange(index, { paramType: 'protection' as ParamType });
+                            }
+                          }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={param.paramType === 'protection'}
-                            readOnly
-                            onClick={() => {
-                              if (param.paramType !== 'protection') {
-                                emitChange(index, { paramType: 'protection' as ParamType });
-                              }
-                            }}
-                            onChange={() => {
-                              if (param.paramType !== 'protection') {
-                                emitChange(index, { paramType: 'protection' as ParamType });
-                              }
-                            }}
-                          />
-                          <span>{paramTypeLabel('protection')}</span>
-                        </label>
+                          保护
+                        </button>
                       </div>
                     )}
                   </td>
@@ -159,7 +146,9 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                       </span>
                     ) : (
                       <label
-                        className={`checkbox-option permission-toggle ${param.permission === 'visible' ? 'is-checked' : ''}`}
+                        className={`checkbox-option permission-toggle ${
+                          param.permission === 'visible' ? 'is-checked' : ''
+                        }`}
                       >
                         <input
                           type="checkbox"
