@@ -20,7 +20,7 @@ pub fn ping() -> String {
     "pong".to_string()
 }
 
-/// Build a fresh project template (72 default parameters, product_id=1, key_id=1).
+/// Build a fresh project template with 72 default parameters.
 #[tauri::command]
 pub fn new_project() -> ProjectFile {
     default_project()
@@ -52,12 +52,7 @@ pub fn load_project_file_cmd(path: String) -> Result<ProjectFile, String> {
 
 /// Encrypt parameters and write the resulting bin file to `path`.
 #[tauri::command]
-pub fn export_encrypted_bin_cmd(
-    path: String,
-    params: Vec<Parameter>,
-    product_id: u32,
-    key_id: u32,
-) -> Result<(), String> {
+pub fn export_encrypted_bin_cmd(path: String, params: Vec<Parameter>) -> Result<(), String> {
     // Reject the export early if validation fails — we don't want to ship a
     // broken bin file even by accident.
     let errors = validate_parameters(&params);
@@ -70,11 +65,12 @@ pub fn export_encrypted_bin_cmd(
         return Err(format!("参数校验失败: {}", summary));
     }
 
-    let bytes = to_string_err(export_encrypted_bin_bytes(&params, product_id, key_id))?;
+    let bytes = to_string_err(export_encrypted_bin_bytes(&params))?;
     to_string_err(write_bin_file(std::path::Path::new(&path), &bytes).map(|_| ()))
 }
 
-/// Read and decrypt a bin file from `path`, returning all parameters + header.
+/// Read and decrypt a bin file from `path`, returning all parameters + compact
+/// header information.
 #[tauri::command]
 pub fn parse_encrypted_bin_cmd(path: String) -> Result<ParsedBinInfo, String> {
     let bytes = to_string_err(read_bin_file(std::path::Path::new(&path)))?;

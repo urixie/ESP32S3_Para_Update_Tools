@@ -2,7 +2,11 @@
 //!
 //! The exported ciphertext is the AES-GCM "combined" output: plain ciphertext
 //! immediately followed by the 16-byte authentication tag. Decryption must
-//! therefore split off the trailing tag before calling the AEAD.
+//! therefore pass that combined buffer back into the AEAD.
+//!
+//! This project currently targets one product and one customer, so the first
+//! version uses one fixed product key shared by the PC tool and the ESP32
+//! firmware. The key is never written into the bin file.
 
 use crate::error::AppError;
 use aes_gcm::aead::{Aead, KeyInit};
@@ -17,26 +21,16 @@ pub const NONCE_LEN: usize = 12;
 /// AES-GCM tag length in bytes.
 pub const TAG_LEN: usize = 16;
 
-/// Product-level fixed key used by the first version of the tool.
+/// Single fixed product key used by this tool and by the matching ESP32 parser.
 ///
-/// In production the same 32-byte array MUST be embedded in the ESP32 firmware
-/// so the on-device parser can decrypt the bin file. The bin header only
-/// carries the `key_id`, never the key bytes themselves.
+/// Replace this demo value with a real randomly generated 32-byte key before
+/// production. The same bytes must be embedded in the ESP32 firmware.
 pub const PRODUCT_KEY: [u8; KEY_LEN] = [
-    0x21, 0x43, 0x65, 0x87, 0xA9, 0xCB, 0xED, 0x0F, 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0,
-    0x0F, 0xED, 0xCB, 0xA9, 0x87, 0x65, 0x43, 0x21, 0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10,
+    0x21, 0x43, 0x65, 0x87, 0xA9, 0xCB, 0xED, 0x0F,
+    0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0,
+    0x0F, 0xED, 0xCB, 0xA9, 0x87, 0x65, 0x43, 0x21,
+    0xFE, 0xDC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10,
 ];
-
-/// Look up the key material for a given (product_id, key_id) pair.
-///
-/// The first version only ships one product / one key, but the indirection is
-/// here so the ESP32 side can use the same lookup table.
-pub fn get_key_by_id(product_id: u32, key_id: u32) -> Option<[u8; KEY_LEN]> {
-    match (product_id, key_id) {
-        (1, 1) => Some(PRODUCT_KEY),
-        _ => None,
-    }
-}
 
 /// Generate a fresh random 12-byte AES-GCM nonce.
 pub fn generate_nonce() -> [u8; NONCE_LEN] {
@@ -45,11 +39,11 @@ pub fn generate_nonce() -> [u8; NONCE_LEN] {
     nonce
 }
 
-/// Encrypt `plaintext` with the given key and nonce. The Header bytes must be
-/// supplied as AAD so that any tampering with the header also fails the
+/// Encrypt `plaintext` with the given key and nonce. The compact file header is
+/// supplied as AAD so that any tampering with magic/version/nonce also fails the
 /// authentication check.
 ///
-/// Returns: ciphertext || tag (tag is the last 16 bytes).
+/// Returns: ciphertext || tag, where tag is the last 16 bytes.
 pub fn encrypt_payload_with_aad(
     key: &[u8; KEY_LEN],
     nonce: &[u8; NONCE_LEN],
@@ -68,8 +62,7 @@ pub fn encrypt_payload_with_aad(
     Ok(ciphertext_and_tag)
 }
 
-/// Decrypt `ciphertext_and_tag` (which contains ciphertext || tag) and verify
-/// the AAD tag.
+/// Decrypt `ciphertext_and_tag` and verify the AAD tag.
 pub fn decrypt_payload_with_aad(
     key: &[u8; KEY_LEN],
     nonce: &[u8; NONCE_LEN],

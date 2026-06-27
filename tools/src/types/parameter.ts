@@ -12,8 +12,6 @@ export interface Parameter {
 export interface ProjectFile {
   projectName: string;
   formatVersion: number;
-  productId: number;
-  keyId: number;
   description: string;
   parameters: Parameter[];
 }
@@ -25,17 +23,10 @@ export interface ValidationError {
 }
 
 export interface BinHeaderInfo {
-  headerLen: number;
+  headerSize: number;
   formatVersion: number;
-  cryptoAlgo: number;
-  paramCount: number;
-  addrMin: number;
-  addrMax: number;
-  productId: number;
-  keyId: number;
-  flags: number;
   nonceHex: string;
-  payloadLen: number;
+  ciphertextLen: number;
   tagLen: number;
   fileSize: number;
 }
@@ -78,8 +69,6 @@ export const createDefaultParameters = (): Parameter[] => {
 export const createDefaultProject = (): ProjectFile => ({
   projectName: 'default_project',
   formatVersion: 1,
-  productId: 1,
-  keyId: 1,
   description: '',
   parameters: createDefaultParameters(),
 });

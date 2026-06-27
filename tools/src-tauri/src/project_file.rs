@@ -13,6 +13,10 @@ pub fn save_project_file(path: &Path, project: &ProjectFile) -> Result<(), AppEr
 }
 
 /// Load a `ProjectFile` from a JSON file on disk.
+///
+/// Serde ignores extra fields by default, so older project files that still
+/// contain productId/keyId can still be opened after the compact-header
+/// simplification.
 pub fn load_project_file(path: &Path) -> Result<ProjectFile, AppError> {
     let text = std::fs::read_to_string(path)?;
     let project: ProjectFile = serde_json::from_str(&text)?;
@@ -24,8 +28,6 @@ pub fn default_project() -> ProjectFile {
     ProjectFile {
         project_name: "default_project".to_string(),
         format_version: 1,
-        product_id: 1,
-        key_id: 1,
         description: String::new(),
         parameters: create_default_parameters(),
     }

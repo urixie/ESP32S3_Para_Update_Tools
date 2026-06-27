@@ -79,16 +79,16 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({ onClose }) => {
             <p>
               发布用 bin 文件采用 AES-256-GCM 加密。中文名称、默认值、
               类型和权限均位于加密 Payload 内，第三方工具无法直接明文解析。
-              Header 作为 AAD 参与认证，文件被篡改后会解析失败。
+              17 字节文件头作为 AAD 参与认证，文件被篡改后会解析失败。
             </p>
           </section>
 
           <section>
             <h3>文件格式</h3>
             <p>
-              完整文件由 48 字节 Header、12 字节随机 Nonce、加密 Payload
-              以及 16 字节 GCM Tag 组成。Header 中仅保存 key_id，
-              不会泄露任何敏感字段。
+              完整文件由 17 字节简化 Header、加密 Payload 以及 16 字节 GCM Tag 组成。
+              Header 仅包含 Magic、格式版本和随机 Nonce，不再包含 Product ID、Key ID
+              或参数业务字段。
             </p>
           </section>
 

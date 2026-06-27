@@ -121,8 +121,6 @@ export const BuilderPage: React.FC = () => {
       await invoke('export_encrypted_bin_cmd', {
         path,
         params: project.parameters,
-        productId: project.productId,
-        keyId: project.keyId,
       });
       setStatus({ kind: 'success', text: `加密 bin 已生成: ${path}` });
     } catch (e) {
@@ -146,24 +144,6 @@ export const BuilderPage: React.FC = () => {
               />
             </label>
             <label className="side-field">
-              <span>Product ID</span>
-              <input
-                type="number"
-                min={1}
-                value={project.productId}
-                onChange={(e) => handleMetaChange('productId', Number(e.target.value) || 1)}
-              />
-            </label>
-            <label className="side-field">
-              <span>Key ID</span>
-              <input
-                type="number"
-                min={1}
-                value={project.keyId}
-                onChange={(e) => handleMetaChange('keyId', Number(e.target.value) || 1)}
-              />
-            </label>
-            <label className="side-field">
               <span>说明</span>
               <textarea
                 value={project.description}
@@ -184,7 +164,7 @@ export const BuilderPage: React.FC = () => {
           </div>
 
           <div className="side-panel-section action-section">
-            <div className="side-panel-title">校验与导出</div>
+            <div className="side-panel-title">导出</div>
             <div className="side-action-list export-actions">
               <button className="primary primary-main" onClick={handleExportBin} disabled={busy}>
                 生成加密 bin

@@ -1,168 +1,103 @@
-//! Bin file format: 48-byte plaintext Header + AES-256-GCM ciphertext+tag.
+//! Simplified bin file format: compact plaintext header + AES-256-GCM payload.
 //!
-//! Header layout (all little-endian, fixed 48 bytes):
+//! The product currently has one product, one customer and one fixed key, so
+//! the bin header only keeps fields that are actually needed by ESP32 parsing.
 //!
-//! | off | field           | size | value                       |
-//! |----:|-----------------|-----:|-----------------------------|
-//! |   0 | magic           |    4 | "UEPB"                       |
-//! |   4 | header_len      |    2 | 48                           |
-//! |   6 | format_version  |    2 | 1                            |
-//! |   8 | crypto_algo     |    1 | 1 = AES-256-GCM              |
-//! |   9 | param_count     |    1 | 72                           |
-//! |  10 | addr_min        |    1 | 0                            |
-//! |  11 | addr_max        |    1 | 71                           |
-//! |  12 | product_id      |    4 | caller supplied              |
-//! |  16 | key_id          |    4 | caller supplied              |
-//! |  20 | flags           |    4 | 0                            |
-//! |  24 | nonce           |   12 | random per export            |
-//! |  36 | payload_len     |    4 | ciphertext length (no tag)   |
-//! |  40 | tag_len         |    1 | 16                           |
-//! |  41 | reserved        |    7 | zeros                        |
+//! File layout:
 //!
-//! The Header is fed into AES-GCM as AAD, so any tampering with the header
-//! itself causes decryption to fail.
+//! | off | field          | size | value                  |
+//! |----:|----------------|-----:|------------------------|
+//! |   0 | magic          |    4 | "UEPB"                 |
+//! |   4 | format_version |    1 | 1                      |
+//! |   5 | nonce          |   12 | random per export      |
+//!
+//! Final file:
+//!
+//! ```text
+//! [17-byte Header][AES-GCM ciphertext][16-byte GCM tag]
+//! ```
+//!
+//! The 17-byte Header is fed into AES-GCM as AAD, so any tampering with
+//! magic/version/nonce causes decryption to fail.
 
 use crate::crypto::{
-    decrypt_payload_with_aad, encrypt_payload_with_aad, get_key_by_id, generate_nonce,
-    KEY_LEN, NONCE_LEN, TAG_LEN,
+    decrypt_payload_with_aad, encrypt_payload_with_aad, generate_nonce, PRODUCT_KEY, NONCE_LEN,
+    TAG_LEN,
 };
 use crate::error::AppError;
-use crate::model::{BinHeaderInfo, Parameter, ParsedBinInfo, PARAM_COUNT};
+use crate::model::{BinHeaderInfo, Parameter, ParsedBinInfo};
 use crate::payload_codec::{decode_payload, encode_payload};
 use crate::validator::validate_parameters;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::io::{Cursor, Read, Write};
+use std::io::Write;
 
 /// File magic, 4 ASCII bytes.
 pub const MAGIC: &[u8; 4] = b"UEPB";
-/// Header is fixed at 48 bytes for the first format version.
-pub const HEADER_LEN: u16 = 48;
-/// Current format version.
-pub const FORMAT_VERSION: u16 = 1;
-/// Crypto algorithm ID: 1 = AES-256-GCM.
-pub const CRYPTO_ALGO_AES_256_GCM: u8 = 1;
-/// Total Header size constant for slicing.
-pub const HEADER_SIZE: usize = 48;
-/// Address range hard-coded into the header. Mirrored from `model.rs`.
-pub const ADDR_MIN: u8 = 0;
-pub const ADDR_MAX: u8 = 71;
 
-/// Build the 48-byte Header for export. Returns the bytes ready to be used
-/// as AAD and prepended to the file.
-fn build_header(
-    product_id: u32,
-    key_id: u32,
-    nonce: &[u8; NONCE_LEN],
-    payload_cipher_len: u32,
-) -> Vec<u8> {
+/// Current simplified bin format version.
+pub const FORMAT_VERSION: u8 = 1;
+
+/// Compact Header size: 4-byte magic + 1-byte version + 12-byte nonce.
+pub const HEADER_SIZE: usize = 17;
+
+/// Build the compact 17-byte Header for export. Returns the bytes ready to be
+/// used as AAD and prepended to the file.
+fn build_header(nonce: &[u8; NONCE_LEN]) -> Vec<u8> {
     let mut h = Vec::with_capacity(HEADER_SIZE);
     h.extend_from_slice(MAGIC);
-    h.write_u16::<LittleEndian>(HEADER_LEN).unwrap();
-    h.write_u16::<LittleEndian>(FORMAT_VERSION).unwrap();
-    h.write_u8(CRYPTO_ALGO_AES_256_GCM).unwrap();
-    h.write_u8(PARAM_COUNT as u8).unwrap();
-    h.write_u8(ADDR_MIN).unwrap();
-    h.write_u8(ADDR_MAX).unwrap();
-    h.write_u32::<LittleEndian>(product_id).unwrap();
-    h.write_u32::<LittleEndian>(key_id).unwrap();
-    h.write_u32::<LittleEndian>(0).unwrap(); // flags
+    h.push(FORMAT_VERSION);
     h.extend_from_slice(nonce);
-    h.write_u32::<LittleEndian>(payload_cipher_len).unwrap();
-    h.write_u8(TAG_LEN as u8).unwrap();
-    h.extend_from_slice(&[0u8; 7]); // reserved
     debug_assert_eq!(h.len(), HEADER_SIZE);
     h
 }
 
-/// Parse the 48-byte Header into the public info struct. Validates every
-/// fixed field; callers can rely on a successful return meaning the bin file
-/// is at least structurally sound.
-fn parse_header(header: &[u8]) -> Result<BinHeaderInfo, AppError> {
+/// Parse the compact 17-byte Header. Validates magic and version, and extracts
+/// the nonce used by AES-GCM.
+fn parse_header(header: &[u8], file_size: usize) -> Result<(BinHeaderInfo, [u8; NONCE_LEN]), AppError> {
     if header.len() < HEADER_SIZE {
         return Err(AppError::BinTooSmall(HEADER_SIZE));
     }
-    let mut cur = Cursor::new(&header[..HEADER_SIZE]);
 
-    let mut magic = [0u8; 4];
-    cur.read_exact(&mut magic).map_err(|_| AppError::InvalidMagic)?;
-    if &magic != MAGIC {
+    if &header[0..4] != MAGIC {
         return Err(AppError::InvalidMagic);
     }
 
-    let header_len = cur.read_u16::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
-    if header_len as usize != HEADER_SIZE {
-        return Err(AppError::InvalidHeaderLen(header_len));
-    }
-    let format_version = cur.read_u16::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
+    let format_version = header[4];
     if format_version != FORMAT_VERSION {
-        return Err(AppError::UnsupportedFormatVersion(format_version));
+        return Err(AppError::UnsupportedFormatVersion(format_version as u16));
     }
-    let crypto_algo = cur.read_u8().map_err(|_| AppError::InvalidMagic)?;
-    if crypto_algo != CRYPTO_ALGO_AES_256_GCM {
-        return Err(AppError::UnsupportedCryptoAlgo(crypto_algo));
-    }
-    let param_count = cur.read_u8().map_err(|_| AppError::InvalidMagic)?;
-    if param_count as usize != PARAM_COUNT {
-        return Err(AppError::InvalidParamCount(param_count));
-    }
-    let addr_min = cur.read_u8().map_err(|_| AppError::InvalidMagic)?;
-    let addr_max = cur.read_u8().map_err(|_| AppError::InvalidMagic)?;
-    if addr_min != ADDR_MIN || addr_max != ADDR_MAX {
-        return Err(AppError::InvalidAddressRange(addr_min, addr_max));
-    }
-
-    let product_id = cur.read_u32::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
-    let key_id = cur.read_u32::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
-    let flags = cur.read_u32::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
 
     let mut nonce = [0u8; NONCE_LEN];
-    cur.read_exact(&mut nonce).map_err(|_| AppError::InvalidMagic)?;
+    nonce.copy_from_slice(&header[5..17]);
 
-    let payload_len = cur.read_u32::<LittleEndian>().map_err(|_| AppError::InvalidMagic)?;
-    let tag_len = cur.read_u8().map_err(|_| AppError::InvalidMagic)?;
-    if tag_len as usize != TAG_LEN {
-        return Err(AppError::UnsupportedCryptoAlgo(tag_len));
+    let body_len = file_size
+        .checked_sub(HEADER_SIZE)
+        .ok_or(AppError::BinTooSmall(HEADER_SIZE + TAG_LEN))?;
+    if body_len < TAG_LEN {
+        return Err(AppError::BinTooSmall(HEADER_SIZE + TAG_LEN));
     }
-    // Skip 7 reserved bytes; nothing to validate (must be zero by spec).
 
-    Ok(BinHeaderInfo {
-        header_len,
-        format_version,
-        crypto_algo,
-        param_count,
-        addr_min,
-        addr_max,
-        product_id,
-        key_id,
-        flags,
-        nonce_hex: hex_encode(&nonce),
-        payload_len,
-        tag_len,
-        file_size: 0,
-    })
+    let ciphertext_len = body_len - TAG_LEN;
+
+    Ok((
+        BinHeaderInfo {
+            header_size: HEADER_SIZE as u16,
+            format_version,
+            nonce_hex: hex_encode(&nonce),
+            ciphertext_len: ciphertext_len as u64,
+            tag_len: TAG_LEN as u8,
+            file_size: file_size as u64,
+        },
+        nonce,
+    ))
 }
 
 /// Encode parameters into a complete bin file (Header + ciphertext + tag).
 ///
 /// `parameters` is validated here — any failure short-circuits with
-/// `AppError::ValidationFailed`. This makes the function safe to call from
-/// any code path, not just through the Tauri command layer.
-///
-/// The output bytes are:
-///
-/// ```text
-/// [48-byte Header][ciphertext (== plaintext.len() bytes)][16-byte GCM tag]
-/// ```
-///
-/// The 48-byte Header is also fed into AES-GCM as AAD, so any tampering
-/// with the Header (including `payload_len`) invalidates the tag.
-pub fn export_encrypted_bin_bytes(
-    parameters: &[Parameter],
-    product_id: u32,
-    key_id: u32,
-) -> Result<Vec<u8>, AppError> {
-    // 1. Validate first so we never emit a malformed bin file, no matter
-    //    who the caller is (Tauri command, future CLI, unit test, etc.).
+/// `AppError::ValidationFailed`. This makes the function safe to call from any
+/// code path, not just through the Tauri command layer.
+pub fn export_encrypted_bin_bytes(parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
+    // 1. Validate first so we never emit a malformed bin file.
     let errors = validate_parameters(parameters);
     if !errors.is_empty() {
         let summary = errors
@@ -173,27 +108,16 @@ pub fn export_encrypted_bin_bytes(
         return Err(AppError::ValidationFailed(summary));
     }
 
-    // 2. Look up the key material.
-    let key = get_key_by_id(product_id, key_id).ok_or(AppError::KeyNotFound {
-        product_id,
-        key_id,
-    })?;
-
-    // 3. Build plaintext payload, then a fresh random nonce.
+    // 2. Build plaintext payload, then a fresh random nonce and compact header.
     let plaintext = encode_payload(parameters)?;
     let nonce = generate_nonce();
+    let header = build_header(&nonce);
 
-    // 4. AES-GCM is a stream cipher: ciphertext length == plaintext length,
-    //    plus a fixed 16-byte authentication tag at the end. Because the
-    //    Header already contains `payload_len` (= ciphertext length, NOT
-    //    including the tag), we can build the Header up front using the
-    //    known plaintext length and only call AES-GCM once.
-    let cipher_len = plaintext.len() as u32;
-    let header = build_header(product_id, key_id, &nonce, cipher_len);
+    // 3. Encrypt payload. Header is AAD, so changing magic/version/nonce will
+    //    make AES-GCM verification fail on parse.
+    let ciphertext_and_tag = encrypt_payload_with_aad(&PRODUCT_KEY, &nonce, &header, &plaintext)?;
 
-    let ciphertext_and_tag = encrypt_payload_with_aad(&key, &nonce, &header, &plaintext)?;
-
-    // 5. Assemble final file: Header || ciphertext || tag.
+    // 4. Assemble final file: Header || ciphertext || tag.
     let mut out = Vec::with_capacity(HEADER_SIZE + ciphertext_and_tag.len());
     out.extend_from_slice(&header);
     out.extend_from_slice(&ciphertext_and_tag);
@@ -209,33 +133,9 @@ pub fn parse_encrypted_bin_bytes(data: &[u8]) -> Result<ParsedBinInfo, AppError>
     let header = &data[..HEADER_SIZE];
     let body = &data[HEADER_SIZE..];
 
-    let mut info = parse_header(header)?;
-    info.file_size = data.len() as u64;
+    let (info, nonce) = parse_header(header, data.len())?;
 
-    // ciphertext_len is body minus the trailing tag
-    if body.len() < TAG_LEN {
-        return Err(AppError::BinTooSmall(HEADER_SIZE + TAG_LEN));
-    }
-    let payload_len = body.len() - TAG_LEN;
-    if payload_len as u32 != info.payload_len {
-        // If the on-disk body length disagrees with the declared payload_len,
-        // treat the file as tampered.
-        return Err(AppError::DecryptFailed);
-    }
-
-    let key = get_key_by_id(info.product_id, info.key_id).ok_or(AppError::KeyNotFound {
-        product_id: info.product_id,
-        key_id: info.key_id,
-    })?;
-
-    let mut nonce = [0u8; NONCE_LEN];
-    let nonce_bytes = hex_decode(&info.nonce_hex).map_err(|_| AppError::InvalidMagic)?;
-    if nonce_bytes.len() != NONCE_LEN {
-        return Err(AppError::InvalidMagic);
-    }
-    nonce.copy_from_slice(&nonce_bytes);
-
-    let plaintext = decrypt_payload_with_aad(&key, &nonce, header, body)?;
+    let plaintext = decrypt_payload_with_aad(&PRODUCT_KEY, &nonce, header, body)?;
     let parameters = decode_payload(&plaintext)?;
 
     Ok(ParsedBinInfo {
@@ -253,30 +153,6 @@ fn hex_encode(bytes: &[u8]) -> String {
     s
 }
 
-/// Helper: reverse of `hex_encode`. Accepts either case.
-fn hex_decode(s: &str) -> Result<Vec<u8>, AppError> {
-    if s.len() % 2 != 0 {
-        return Err(AppError::InvalidMagic);
-    }
-    let mut out = Vec::with_capacity(s.len() / 2);
-    let bytes = s.as_bytes();
-    for i in (0..bytes.len()).step_by(2) {
-        let hi = hex_nibble(bytes[i])?;
-        let lo = hex_nibble(bytes[i + 1])?;
-        out.push((hi << 4) | lo);
-    }
-    Ok(out)
-}
-
-fn hex_nibble(b: u8) -> Result<u8, AppError> {
-    match b {
-        b'0'..=b'9' => Ok(b - b'0'),
-        b'a'..=b'f' => Ok(b - b'a' + 10),
-        b'A'..=b'F' => Ok(b - b'A' + 10),
-        _ => Err(AppError::InvalidMagic),
-    }
-}
-
 /// Convenience helper used by commands.rs to write a bin to disk and return
 /// the actual number of bytes written.
 pub fn write_bin_file(path: &std::path::Path, bytes: &[u8]) -> Result<usize, AppError> {
@@ -291,7 +167,3 @@ pub fn read_bin_file(path: &std::path::Path) -> Result<Vec<u8>, AppError> {
     let bytes = std::fs::read(path)?;
     Ok(bytes)
 }
-
-// Suppress unused-import warnings on a stable toolchain.
-#[allow(dead_code)]
-fn _ensure_key_len_matches(_k: &[u8; KEY_LEN]) {}

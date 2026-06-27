@@ -49,23 +49,8 @@ pub enum AppError {
     #[error("Bin 文件 magic 错误，期望 UEPB")]
     InvalidMagic,
 
-    #[error("Bin 文件 Header 长度错误: 期望 48, 实际 {0}")]
-    InvalidHeaderLen(u16),
-
     #[error("Bin 文件格式版本不支持: {0}")]
     UnsupportedFormatVersion(u16),
-
-    #[error("Bin 文件加密算法不支持: {0}")]
-    UnsupportedCryptoAlgo(u8),
-
-    #[error("Bin 文件参数数量错误: 期望 72, 实际 {0}")]
-    InvalidParamCount(u8),
-
-    #[error("Bin 文件地址范围错误: 期望 0~71, 实际 {0}~{1}")]
-    InvalidAddressRange(u8, u8),
-
-    #[error("找不到密钥: product_id={product_id}, key_id={key_id}")]
-    KeyNotFound { product_id: u32, key_id: u32 },
 
     #[error("Bin 文件损坏、被篡改或密钥错误 (AES-GCM tag 校验失败)")]
     DecryptFailed,

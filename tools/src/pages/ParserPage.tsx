@@ -95,19 +95,13 @@ export const ParserPage: React.FC = () => {
 
           {header && (
             <div className="side-panel-section">
-              <div className="side-panel-title">Header 信息</div>
+              <div className="side-panel-title">文件头信息</div>
               <div className="side-header-card">
                 <Field label="Magic" value={'"UEPB"'} />
-                <Field label="Header Len" value={`${header.headerLen} 字节`} />
+                <Field label="Header Size" value={`${header.headerSize} 字节`} />
                 <Field label="Format Version" value={`${header.formatVersion}`} />
-                <Field label="Crypto Algo" value={`${header.cryptoAlgo} (AES-256-GCM)`} />
-                <Field label="Param Count" value={`${header.paramCount}`} />
-                <Field label="Addr Range" value={`${header.addrMin} ~ ${header.addrMax}`} />
-                <Field label="Product ID" value={`${header.productId}`} />
-                <Field label="Key ID" value={`${header.keyId}`} />
-                <Field label="Flags" value={`${header.flags}`} />
                 <Field label="Nonce" value={header.nonceHex} mono />
-                <Field label="Payload Len" value={`${header.payloadLen} 字节`} />
+                <Field label="Ciphertext Len" value={`${header.ciphertextLen} 字节`} />
                 <Field label="Tag Len" value={`${header.tagLen} 字节`} />
                 <Field label="File Size" value={`${header.fileSize} 字节`} />
               </div>

@@ -7,8 +7,7 @@ pub const PARAM_COUNT: usize = 72;
 pub const ADDR_MIN: u8 = 0;
 pub const ADDR_MAX: u8 = 71;
 
-/// Maximum length of a parameter name in Unicode characters (used for the
-/// business rule "max 30 chinese characters / glyphs").
+/// Maximum length of a parameter name in Unicode characters.
 pub const NAME_MAX_CHARS: usize = 30;
 
 /// Maximum length of a UTF-8 encoded parameter name in bytes. This is the
@@ -85,17 +84,16 @@ pub struct Parameter {
     pub permission: ParamPermission,
 }
 
-/// Project file (JSON, plaintext, used internally by the user only).
+/// Project file (JSON, plaintext, used internally by the engineer only).
 ///
-/// Note: this is NOT the bin file format — it is a human-readable JSON file
-/// the engineer can save and reload from the GUI.
+/// Note: this is NOT the bin file format. It is a human-readable JSON file the
+/// engineer can save and reload from the GUI. Product/key identifiers are not
+/// exposed because the current product uses one fixed key.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFile {
     pub project_name: String,
     pub format_version: u16,
-    pub product_id: u32,
-    pub key_id: u32,
     pub description: String,
     pub parameters: Vec<Parameter>,
 }
@@ -105,29 +103,21 @@ impl Default for ProjectFile {
         Self {
             project_name: "default_project".to_string(),
             format_version: 1,
-            product_id: 1,
-            key_id: 1,
             description: String::new(),
             parameters: create_default_parameters(),
         }
     }
 }
 
-/// Public header information reported back to the user after parsing a bin.
+/// Public compact-header information reported back to the GUI after parsing a
+/// bin file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BinHeaderInfo {
-    pub header_len: u16,
-    pub format_version: u16,
-    pub crypto_algo: u8,
-    pub param_count: u8,
-    pub addr_min: u8,
-    pub addr_max: u8,
-    pub product_id: u32,
-    pub key_id: u32,
-    pub flags: u32,
+    pub header_size: u16,
+    pub format_version: u8,
     pub nonce_hex: String,
-    pub payload_len: u32,
+    pub ciphertext_len: u64,
     pub tag_len: u8,
     pub file_size: u64,
 }

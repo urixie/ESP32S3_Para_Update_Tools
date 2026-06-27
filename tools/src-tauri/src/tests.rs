@@ -1,7 +1,7 @@
 //! Unit tests for the whole encode / validate / encrypt / decrypt chain.
 
 use crate::bin_format::{
-    export_encrypted_bin_bytes, parse_encrypted_bin_bytes, MAGIC,
+    export_encrypted_bin_bytes, parse_encrypted_bin_bytes, MAGIC, FORMAT_VERSION, HEADER_SIZE,
 };
 use crate::model::{
     create_default_parameters, ParamPermission, ParamType, Parameter, PARAM_COUNT,
@@ -48,8 +48,9 @@ fn payload_roundtrip() {
 #[test]
 fn full_export_parse_roundtrip() {
     let params = build_sample();
-    let bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    let bytes = export_encrypted_bin_bytes(&params).expect("export ok");
     assert!(bytes.starts_with(MAGIC));
+    assert_eq!(bytes[4], FORMAT_VERSION);
     let parsed = parse_encrypted_bin_bytes(&bytes).expect("parse ok");
     assert_eq!(parsed.parameters.len(), PARAM_COUNT);
     for (a, b) in params.iter().zip(parsed.parameters.iter()) {
@@ -59,6 +60,23 @@ fn full_export_parse_roundtrip() {
         assert_eq!(a.param_type, b.param_type);
         assert_eq!(a.permission, b.permission);
     }
+}
+
+#[test]
+fn simplified_header_layout_is_17_bytes() {
+    let params = build_sample();
+    let plaintext = crate::payload_codec::encode_payload(&params).expect("encode ok");
+    let bin = export_encrypted_bin_bytes(&params).expect("export ok");
+    let parsed = parse_encrypted_bin_bytes(&bin).expect("parse ok");
+
+    assert_eq!(HEADER_SIZE, 17);
+    assert_eq!(&bin[0..4], MAGIC);
+    assert_eq!(bin[4], FORMAT_VERSION);
+    assert_eq!(parsed.header.header_size as usize, HEADER_SIZE);
+    assert_eq!(parsed.header.format_version, FORMAT_VERSION);
+    assert_eq!(parsed.header.tag_len as usize, crate::crypto::TAG_LEN);
+    assert_eq!(parsed.header.ciphertext_len as usize, plaintext.len());
+    assert_eq!(parsed.header.file_size as usize, bin.len());
 }
 
 #[test]
@@ -107,34 +125,28 @@ fn default_value_boundaries_ok() {
 #[test]
 fn chinese_name_not_present_in_bin_bytes() {
     let params = build_sample();
-    let bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
-    // Look for a representative Chinese name substring inside the raw bin.
-    // "母线" is UTF-8 encoded as e6 af 96 e7 bab5 in this case — but the actual
-    // encoding is `e6 9c b5 e7 ba bf` (depending on character). We instead
-    // check the simpler invariant: search for any ASCII letter that the name
-    // would not contain (like 'A') inside the ciphertext region.
-    let header_size = 48;
-    let body = &bytes[header_size..];
-    // The ciphertext should NOT contain the literal ASCII string "母线"
-    // (which would be visible as 6 raw bytes 0xE6 0x9C 0xB5 0xE7 0xBA 0xBF).
+    let bytes = export_encrypted_bin_bytes(&params).expect("export ok");
+
     let needle = "母线参数".as_bytes();
+
+    let header = &bytes[..HEADER_SIZE];
+    assert!(
+        find_subsequence(header, needle).is_none(),
+        "Chinese name must not appear in the compact header"
+    );
+
+    let body = &bytes[HEADER_SIZE..];
     assert!(
         find_subsequence(body, needle).is_none(),
         "Chinese name must not appear in the encrypted body"
-    );
-    // Sanity: the plaintext header should also not leak the names.
-    let header = &bytes[..header_size];
-    assert!(
-        find_subsequence(header, needle).is_none(),
-        "Chinese name must not appear in the header either"
     );
 }
 
 #[test]
 fn tampered_byte_fails_parse() {
     let params = build_sample();
-    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
-    // Flip one byte in the encrypted body.
+    let mut bytes = export_encrypted_bin_bytes(&params).expect("export ok");
+    // Flip one byte in the encrypted body/tag.
     let target = bytes.len() - 1;
     bytes[target] ^= 0xFF;
     let result = parse_encrypted_bin_bytes(&bytes);
@@ -144,9 +156,9 @@ fn tampered_byte_fails_parse() {
 #[test]
 fn tampered_header_fails_parse() {
     let params = build_sample();
-    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
-    // Flip one byte in the Header (AAD).
-    bytes[20] ^= 0x55;
+    let mut bytes = export_encrypted_bin_bytes(&params).expect("export ok");
+    // Flip one byte in the compact Header (AAD).
+    bytes[5] ^= 0x55;
     let result = parse_encrypted_bin_bytes(&bytes);
     assert!(result.is_err(), "tampered header must cause parse failure");
 }
@@ -154,22 +166,19 @@ fn tampered_header_fails_parse() {
 #[test]
 fn invalid_magic_rejected() {
     let params = build_sample();
-    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
+    let mut bytes = export_encrypted_bin_bytes(&params).expect("export ok");
     bytes[0] = b'X';
     let result = parse_encrypted_bin_bytes(&bytes);
     assert!(result.is_err(), "wrong magic must fail");
 }
 
 #[test]
-fn wrong_param_count_rejected() {
-    // Use a payload whose param_count byte has been mutated.
+fn unsupported_format_version_rejected() {
     let params = build_sample();
-    let mut bytes = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
-    // Header byte 9 is param_count.
-    bytes[9] = 50;
-    // AAD change forces AES-GCM to fail.
+    let mut bytes = export_encrypted_bin_bytes(&params).expect("export ok");
+    bytes[4] = FORMAT_VERSION.wrapping_add(1);
     let result = parse_encrypted_bin_bytes(&bytes);
-    assert!(result.is_err(), "wrong param_count must fail (tag mismatch)");
+    assert!(result.is_err(), "wrong format version must fail");
 }
 
 #[test]
@@ -179,7 +188,7 @@ fn export_directly_rejects_duplicate_address() {
     // return an Err instead of producing a broken bin file.
     let mut params = build_sample();
     params[5].address = 3; // collide with params[3].address
-    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    let result = export_encrypted_bin_bytes(&params);
     assert!(result.is_err(), "duplicate address must be rejected");
     match result.unwrap_err() {
         crate::error::AppError::ValidationFailed(_) => {}
@@ -191,7 +200,7 @@ fn export_directly_rejects_duplicate_address() {
 fn export_directly_rejects_empty_name() {
     let mut params = build_sample();
     params[12].name = "".to_string();
-    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    let result = export_encrypted_bin_bytes(&params);
     assert!(result.is_err(), "empty name must be rejected");
 }
 
@@ -199,30 +208,8 @@ fn export_directly_rejects_empty_name() {
 fn export_directly_rejects_missing_address() {
     let mut params = build_sample();
     params.remove(20);
-    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    let result = export_encrypted_bin_bytes(&params);
     assert!(result.is_err(), "wrong param count must be rejected");
-}
-
-#[test]
-fn header_payload_len_equals_plaintext_len() {
-    let params = build_sample();
-    let plaintext = crate::payload_codec::encode_payload(&params).expect("encode ok");
-    let bin = export_encrypted_bin_bytes(&params, 1, 1).expect("export ok");
-
-    // payload_len lives at Header offset 36, little-endian u32.
-    let payload_len = u32::from_le_bytes(bin[36..40].try_into().unwrap()) as usize;
-    assert_eq!(
-        payload_len,
-        plaintext.len(),
-        "payload_len must equal plaintext.len() (AES-GCM ciphertext length)"
-    );
-
-    // Body size = payload_len + tag_len (16)
-    assert_eq!(
-        bin.len(),
-        crate::bin_format::HEADER_SIZE + payload_len + 16,
-        "total file size = Header + ciphertext + tag"
-    );
 }
 
 #[test]
@@ -268,7 +255,7 @@ fn export_rejects_31_chinese_chars() {
     // The export function must not produce a bin when validation fails.
     let mut params = build_sample();
     params[0].name = "参".repeat(31);
-    let result = export_encrypted_bin_bytes(&params, 1, 1);
+    let result = export_encrypted_bin_bytes(&params);
     assert!(result.is_err(), "export must reject names longer than 30 chars");
 }
 
