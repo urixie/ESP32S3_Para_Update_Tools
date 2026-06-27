@@ -34,6 +34,9 @@ pub fn default_project() -> ProjectFile {
 /// Re-fill missing addresses 0..PARAM_COUNT-1 with placeholder entries so the
 /// GUI never holds a partial list. Used after loading a file that had a
 /// non-standard shape.
+#[allow(dead_code)] // Reserved for the GUI's "load non-standard project file"
+                   // recovery path; not called yet because the current load
+                   // command refills via `commands::new_project` instead.
 pub fn normalize_parameters(list: Vec<crate::model::Parameter>) -> Vec<crate::model::Parameter> {
     if list.len() == PARAM_COUNT {
         return list;

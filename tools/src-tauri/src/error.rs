@@ -17,15 +17,24 @@ pub enum AppError {
     DuplicateAddress(u8),
 
     #[error("参数地址缺失: {0}")]
+    #[allow(dead_code)] // Reserved for completeness of the error surface; not
+                       // constructed yet because the validator reports the
+                       // full missing-address set via ValidationFailed.
     MissingAddress(u8),
 
     #[error("参数名称不能为空: 地址 {0}")]
+    #[allow(dead_code)] // Reserved for completeness of the error surface; not
+                       // constructed yet because the validator currently folds
+                       // empty-name findings into ValidationFailed.
     EmptyName(u8),
 
     #[error("参数名称 UTF-8 字节长度超过 {max} 字节: 地址 {address}, 实际 {actual}")]
     NameTooLong { address: u8, max: usize, actual: usize },
 
     #[error("默认值越界: 地址 {0}")]
+    #[allow(dead_code)] // Reserved for completeness of the error surface; not
+                       // constructed yet because the validator folds
+                       // out-of-range default values into ValidationFailed.
     InvalidDefaultValue(u8),
 
     #[error("参数类型非法: 地址 {0}")]
@@ -86,6 +95,8 @@ pub enum AppError {
     Json(String),
 
     #[error("未知错误: {0}")]
+    #[allow(dead_code)] // Generic catch-all kept for future use; currently
+                       // every fallible path returns a typed variant.
     Unknown(String),
 }
 
