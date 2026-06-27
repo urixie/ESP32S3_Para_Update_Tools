@@ -1,4 +1,3 @@
-
 set(src_dirs
             .)
 
@@ -10,4 +9,3 @@ idf_component_register(
     INCLUDE_DIRS ${include_dirs}
     REQUIRES BSP app_storage_lock app_wifi app_web_file_server
 )
-        

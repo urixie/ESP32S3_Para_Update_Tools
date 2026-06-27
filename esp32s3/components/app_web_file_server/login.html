@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UniEdge 参数后台登录</title>
+<style>
+:root{color-scheme:dark;--bg:#0b111b;--card:#121a27;--line:#253248;--text:#edf5ff;--muted:#90a0b7;--blue:#2f81f7;--gold:#e7c477;--green:#22c55e;--shadow:0 24px 80px rgba(0,0,0,.38)}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 20% 10%,rgba(47,129,247,.28),transparent 35%),radial-gradient(circle at 80% 0%,rgba(231,196,119,.16),transparent 32%),linear-gradient(135deg,#08111c,#111827 55%,#0c121c);color:var(--text);font-family:Arial,'Microsoft YaHei',sans-serif}.card{width:min(420px,calc(100% - 30px));padding:30px;border:1px solid rgba(148,163,184,.22);border-radius:22px;background:linear-gradient(180deg,rgba(18,26,39,.96),rgba(12,18,28,.96));box-shadow:var(--shadow)}.brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}.mark{width:46px;height:46px;border-radius:15px;background:linear-gradient(135deg,var(--blue),var(--gold));box-shadow:0 12px 30px rgba(47,129,247,.25)}h1{margin:0;font-size:26px;letter-spacing:.3px}.sub{margin:3px 0 0;color:var(--muted)}.field{display:grid;gap:8px;margin:15px 0}label{font-size:14px;color:#cbd5e1}input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#0b1220;color:var(--text);outline:0}input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,129,247,.18)}button{width:100%;margin-top:10px;padding:13px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--blue),#1f6feb);color:#fff;font-weight:800;letter-spacing:.4px;cursor:pointer}.msg{min-height:22px;margin-top:14px;color:var(--gold)}.tip{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.5}.pill{display:inline-flex;padding:2px 8px;border:1px solid rgba(231,196,119,.32);border-radius:999px;color:var(--gold);background:rgba(231,196,119,.08)}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="brand"><div class="mark"></div><div><h1>UniEdge 参数解析后台</h1><p class="sub">ESP32-S3 加密 bin 文件解析</p></div></div>
+  <div class="field"><label for="u">用户名</label><input id="u" value="admin" autocomplete="username"></div>
+  <div class="field"><label for="p">密码</label><input id="p" type="password" autocomplete="current-password" autofocus></div>
+  <button onclick="login()">登录</button>
+  <div id="m" class="msg"></div>
+  <div class="tip"><span class="pill">默认账号：admin / admin</span><br>正式量产前建议替换为 NVS 中的设备密码或一次性授权码。</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+$('p').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+async function err(r){try{const j=await r.clone().json();return j.error||r.statusText}catch(e){return await r.text()||r.statusText}}
+async function login(){
+  $('m').textContent='正在登录...';
+  const body='username='+encodeURIComponent($('u').value)+'&password='+encodeURIComponent($('p').value);
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+    if(!r.ok){$('m').textContent=await err(r);return;}
+    location.href='/app';
+  }catch(e){$('m').textContent='登录失败：'+e.message;}
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 #ifndef __STORAGE_FLASH_H
 #define __STORAGE_FLASH_H
 
+#include <stdint.h>
 #include "esp_err.h"
 
 typedef struct {

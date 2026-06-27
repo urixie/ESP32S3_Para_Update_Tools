@@ -5,4 +5,4 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(ESP32S3_Web_File_Manager)
+project(ESP32S3_Web_Param_Bin_Parser)

@@ -11,8 +11,8 @@
 #include "freertos/event_groups.h"
 #include "nvs_flash.h"
 
-#define APP_WIFI_SSID "UniEdge2022"
-#define APP_WIFI_PASSWORD "uniedgehome"
+#define APP_WIFI_SSID "xyj"
+#define APP_WIFI_PASSWORD "12345678"
 #define APP_WIFI_CONNECTED_BIT BIT0
 
 static const char *TAG = "app_wifi";
