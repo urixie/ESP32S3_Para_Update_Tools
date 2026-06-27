@@ -2,6 +2,7 @@ node_modules/
 dist/
 build/
 target/
+release/
 .env
 npm-debug.log*
 yarn-debug.log*

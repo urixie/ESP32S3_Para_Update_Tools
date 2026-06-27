@@ -11,24 +11,17 @@ const App: React.FC = () => {
 
   return (
     <div className="app-shell">
-      <header className="top-bar">
-        <div className="brand-block">
-          <span className="brand-dot" />
-          <div className="brand-text">
-            <div className="brand">Param Bin Tool</div>
-            <div className="brand-sub">ESP32 参数加密 bin 上位机 · AES-256-GCM</div>
-          </div>
-        </div>
-        <button
-          className="about-button"
-          onClick={() => setAboutOpen(true)}
-        >
-          关于
-        </button>
-      </header>
+      <header className="top-bar" />
 
       <div className="app-body">
         <aside className="side-nav">
+          <button
+            className="about-button"
+            onClick={() => setAboutOpen(true)}
+          >
+            关于
+          </button>
+
           <button
             className={view === 'builder' ? 'active' : ''}
             onClick={() => setView('builder')}

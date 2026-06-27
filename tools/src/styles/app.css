@@ -35,63 +35,35 @@ button {
 }
 
 .top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1.5rem;
+  /* Empty strip retained purely as a thin separator between the window
+     chrome and the workspace; the brand text and About button have moved
+     out of the top bar. */
+  height: 0.45rem;
   background: rgba(13, 19, 32, 0.92);
   border-bottom: 1px solid var(--border-soft);
   backdrop-filter: blur(12px);
 }
 
-.brand-block {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.brand-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-  box-shadow: 0 0 14px rgba(34, 211, 238, 0.6);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.brand {
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-}
-
-.brand-sub {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-}
-
-/* The top-right "关于" button — only thing on the right of the top bar. */
-.about-button {
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  background: rgba(15, 23, 42, 0.72);
+/* The "关于" button now lives at the top of the left side-nav. Inherit the
+   side-nav button chrome but tone it down (lighter font weight, slightly
+   muted text) and use a thin bottom border as a divider so it reads as a
+   meta-action rather than a view switcher. */
+.side-nav .about-button {
+  font-weight: 600;
   color: var(--text-main);
-  padding: 0.55rem 0.95rem;
-  border-radius: 0.75rem;
-  cursor: pointer;
-  font-size: 0.86rem;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  background: rgba(34, 211, 238, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 0.55rem;
+  margin-bottom: 0.25rem;
+  padding: 0.45rem 0.42rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
 }
 
-.about-button:hover {
-  background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.48);
+.side-nav .about-button:hover {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.45);
+  color: var(--text-main);
 }
 
 /* Body row: left side-nav + main content. */
@@ -735,8 +707,8 @@ button {
   overflow-y: auto;
 }
 
-/* Let the parser main panel give its child param-two-column any leftover
-   height after the small sub-section-title row. */
+/* Let the parser main panel give its child param-two-column the full
+   available height now that the sub-section-title row has been removed. */
 .parser-main-panel {
   overflow: hidden;
 }
@@ -744,10 +716,6 @@ button {
 .parser-main-panel .param-two-column {
   flex: 1;
   min-height: 0;
-}
-
-.parser-main-panel .sub-section-title {
-  flex: 0 0 auto;
 }
 
 /* A single column's card: title (optional) + table wrapper. */
@@ -922,21 +890,9 @@ button {
 
 /* ===== Readonly state (parser page) ===== */
 
-.param-table-wrapper.readonly {
-  border-color: rgba(148, 163, 184, 0.14);
-}
-
-.param-table-wrapper.readonly::before {
-  content: '只读 · 解析结果不可编辑';
-  display: block;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  background: rgba(15, 23, 42, 0.7);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-}
+/* The disabled / read-only inputs themselves keep their muted look so it's
+   obvious they can't be edited, but the old "只读 · 解析结果不可编辑" banner
+   has been removed. */
 
 .param-table input:read-only,
 .param-table select:disabled,

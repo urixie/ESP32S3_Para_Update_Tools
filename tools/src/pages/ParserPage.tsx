@@ -117,34 +117,22 @@ export const ParserPage: React.FC = () => {
 
         <div className="page-main-panel parser-main-panel">
           {parameters.length > 0 && (
-            <>
-              <div className="sub-section-title">
-                参数表 ({parameters.length}) ·{' '}
-                <span className="muted">
-                  控制: {parameters.filter((p) => p.paramType === 'control').length} / 保护:{' '}
-                  {parameters.filter((p) => p.paramType === 'protection').length} · 可见:{' '}
-                  {parameters.filter((p) => p.permission === 'visible').length} / 隐藏:{' '}
-                  {parameters.filter((p) => p.permission === 'hidden').length}
-                </span>
-              </div>
-
-              <div className="param-two-column">
-                <ParamTable
-                  title="参数 0 ~ 35"
-                  parameters={parameters.slice(0, 36)}
-                  indexOffset={0}
-                  readonly
-                  onChange={() => undefined}
-                />
-                <ParamTable
-                  title="参数 36 ~ 71"
-                  parameters={parameters.slice(36, 72)}
-                  indexOffset={36}
-                  readonly
-                  onChange={() => undefined}
-                />
-              </div>
-            </>
+            <div className="param-two-column">
+              <ParamTable
+                title="参数 0 ~ 35"
+                parameters={parameters.slice(0, 36)}
+                indexOffset={0}
+                readonly
+                onChange={() => undefined}
+              />
+              <ParamTable
+                title="参数 36 ~ 71"
+                parameters={parameters.slice(36, 72)}
+                indexOffset={36}
+                readonly
+                onChange={() => undefined}
+              />
+            </div>
           )}
 
           {!header && parameters.length === 0 && (
