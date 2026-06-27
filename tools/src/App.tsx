@@ -33,16 +33,14 @@ const App: React.FC = () => {
             className={view === 'builder' ? 'active' : ''}
             onClick={() => setView('builder')}
           >
-            <span className="side-nav-title">参数构建</span>
-            <span className="side-nav-desc">编辑与导出</span>
+            参数构建
           </button>
 
           <button
             className={view === 'parser' ? 'active' : ''}
             onClick={() => setView('parser')}
           >
-            <span className="side-nav-title">参数解析</span>
-            <span className="side-nav-desc">读取与验证</span>
+            参数解析
           </button>
         </aside>
 

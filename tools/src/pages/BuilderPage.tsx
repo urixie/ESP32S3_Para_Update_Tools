@@ -185,7 +185,7 @@ export const BuilderPage: React.FC = () => {
                 value={project.description}
                 onChange={(e) => handleMetaChange('description', e.target.value)}
                 placeholder="工程描述（可选）"
-                rows={3}
+                rows={5}
               />
             </label>
           </div>

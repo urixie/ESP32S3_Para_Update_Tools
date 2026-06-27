@@ -95,30 +95,31 @@ button {
 /* Body row: left side-nav + main content. */
 .app-body {
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns: 104px minmax(0, 1fr);
   min-height: 0;
 }
 
 .side-nav {
   border-right: 1px solid var(--border-soft);
   background: rgba(13, 19, 32, 0.72);
-  padding: 0.75rem 0.5rem;
+  padding: 0.65rem 0.42rem;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
 
 .side-nav button {
+  width: 100%;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
   border-radius: 0.65rem;
-  padding: 0.62rem 0.55rem;
+  padding: 0.62rem 0.42rem;
   cursor: pointer;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
+  text-align: center;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.25;
   transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
@@ -135,18 +136,8 @@ button {
   box-shadow: inset 0 0 12px rgba(34, 211, 238, 0.12);
 }
 
-.side-nav-title {
-  font-size: 0.86rem;
-  font-weight: 700;
-}
-
-.side-nav-desc {
-  font-size: 0.68rem;
-  color: var(--text-subtle);
-}
-
 .main-content {
-  padding: 0.9rem 1rem 1rem 0.75rem;
+  padding: 0.75rem 0.85rem 0.85rem 0.45rem;
   min-width: 0;
   overflow: auto;
 }
@@ -161,7 +152,7 @@ button {
 }
 
 /* On narrow viewports, collapse the side-nav into a horizontal row above
-   the main content so the page doesn't squeeze into a 140px column. */
+   the main content so the page doesn't squeeze into a 104px column. */
 @media (max-width: 900px) {
   .app-body {
     grid-template-columns: 1fr;
@@ -307,7 +298,7 @@ button {
   background: var(--bg-panel);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-lg);
-  padding: 0.9rem;
+  padding: 0.85rem;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
@@ -329,8 +320,8 @@ button {
 
 .page-workspace {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 0.7rem;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 0.65rem;
   align-items: start;
   min-height: 0;
 }
@@ -339,7 +330,7 @@ button {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   background: rgba(15, 23, 42, 0.45);
-  padding: 0.75rem;
+  padding: 0.65rem;
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
@@ -359,22 +350,22 @@ button {
 .side-panel-section {
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.45rem;
 }
 
 .side-panel-title {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: var(--accent-cyan);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .side-field {
   display: flex;
   flex-direction: column;
-  gap: 0.28rem;
-  font-size: 0.76rem;
+  gap: 0.24rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
 }
 
@@ -389,15 +380,16 @@ button {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   color: var(--text-main);
-  padding: 0.48rem 0.55rem;
+  padding: 0.42rem 0.5rem;
   outline: none;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .side-field textarea {
   resize: vertical;
-  min-height: 72px;
-  max-height: 140px;
+  min-height: 110px;
+  max-height: 180px;
+  line-height: 1.45;
   font-family: inherit;
 }
 
@@ -410,7 +402,7 @@ button {
 .side-action-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.42rem;
 }
 
 .side-action-list button {
@@ -418,10 +410,10 @@ button {
   border: 1px solid var(--border-soft);
   background: rgba(15, 23, 42, 0.85);
   color: var(--text-main);
-  padding: 0.55rem 0.75rem;
+  padding: 0.5rem 0.6rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   text-align: left;
   transition: background 0.18s ease, border-color 0.18s ease;
 }
