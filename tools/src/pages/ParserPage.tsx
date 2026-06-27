@@ -5,8 +5,6 @@ import {
   BinHeaderInfo,
   Parameter,
   ParsedBinInfo,
-  paramTypeLabel,
-  permissionLabel,
 } from '../types/parameter';
 import { ParamTable } from '../components/ParamTable';
 
@@ -67,86 +65,100 @@ export const ParserPage: React.FC = () => {
   };
 
   return (
-    <section className="panel">
-      <div className="panel-header">
-        <div>
-          <h2 className="section-title">参数解析</h2>
-          <p className="section-subtitle">解析 UEPB 加密参数文件</p>
+    <section className="panel page-panel">
+      <div className="page-workspace">
+        <aside className="page-side-panel parser-side-panel">
+          <div className="side-panel-section">
+            <div className="side-panel-title">解析操作</div>
+            <div className="side-action-list">
+              <button className="primary" onClick={handleSelectBin} disabled={busy}>
+                选择 bin 文件
+              </button>
+              <button onClick={handleClear} disabled={busy}>
+                清空结果
+              </button>
+            </div>
+          </div>
+
+          {filePath && (
+            <div className="side-panel-section">
+              <div className="side-panel-title">当前文件</div>
+              <div className="file-path-box" title={filePath}>
+                {filePath}
+              </div>
+            </div>
+          )}
+
+          <div className={`status-card side-status status-${status.kind}`}>
+            {status.text}
+          </div>
+        </aside>
+
+        <div className="page-main-panel">
+          {header && (
+            <div className="header-card">
+              <div className="header-card-title">Header 信息</div>
+              <div className="header-grid">
+                <Field label="Magic" value={'"UEPB"'} />
+                <Field label="Header Len" value={`${header.headerLen} 字节`} />
+                <Field label="Format Version" value={`${header.formatVersion}`} />
+                <Field label="Crypto Algo" value={`${header.cryptoAlgo} (AES-256-GCM)`} />
+                <Field label="Param Count" value={`${header.paramCount}`} />
+                <Field label="Addr Range" value={`${header.addrMin} ~ ${header.addrMax}`} />
+                <Field label="Product ID" value={`${header.productId}`} />
+                <Field label="Key ID" value={`${header.keyId}`} />
+                <Field label="Flags" value={`${header.flags}`} />
+                <Field label="Nonce" value={header.nonceHex} mono />
+                <Field label="Payload Len" value={`${header.payloadLen} 字节`} />
+                <Field label="Tag Len" value={`${header.tagLen} 字节`} />
+                <Field label="File Size" value={`${header.fileSize} 字节`} />
+              </div>
+            </div>
+          )}
+
+          {parameters.length > 0 && (
+            <>
+              <div className="sub-section-title">
+                参数表 ({parameters.length}) ·{' '}
+                <span className="muted">
+                  控制: {parameters.filter((p) => p.paramType === 'control').length} / 保护:{' '}
+                  {parameters.filter((p) => p.paramType === 'protection').length} · 可见:{' '}
+                  {parameters.filter((p) => p.permission === 'visible').length} / 隐藏:{' '}
+                  {parameters.filter((p) => p.permission === 'hidden').length}
+                </span>
+              </div>
+
+              <div className="param-two-column">
+                <ParamTable
+                  title="参数 0 ~ 35"
+                  parameters={parameters.slice(0, 36)}
+                  indexOffset={0}
+                  readonly
+                  onChange={() => undefined}
+                />
+                <ParamTable
+                  title="参数 36 ~ 71"
+                  parameters={parameters.slice(36, 72)}
+                  indexOffset={36}
+                  readonly
+                  onChange={() => undefined}
+                />
+              </div>
+
+              <details className="raw-card">
+                <summary>查看原始参数 JSON</summary>
+                <pre>{JSON.stringify(parameters, null, 2)}</pre>
+              </details>
+            </>
+          )}
+
+          {!header && parameters.length === 0 && (
+            <div className="empty-state">
+              请在左侧选择加密 bin 文件进行解析
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="action-row">
-        <button className="primary" onClick={handleSelectBin} disabled={busy}>
-          选择 bin 文件
-        </button>
-        <button onClick={handleClear} disabled={busy}>清空结果</button>
-      </div>
-
-      <div className={`status-card status-${status.kind}`}>{status.text}</div>
-
-      {filePath && (
-        <div className="meta-row">
-          <label className="meta-field meta-field-wide">
-            <span>当前文件</span>
-            <input value={filePath} readOnly />
-          </label>
-        </div>
-      )}
-
-      {header && (
-        <div className="header-card">
-          <div className="header-card-title">Header 信息</div>
-          <div className="header-grid">
-            <Field label="Magic" value={'"UEPB"'} />
-            <Field label="Header Len" value={`${header.headerLen} 字节`} />
-            <Field label="Format Version" value={`${header.formatVersion}`} />
-            <Field label="Crypto Algo" value={`${header.cryptoAlgo} (AES-256-GCM)`} />
-            <Field label="Param Count" value={`${header.paramCount}`} />
-            <Field label="Addr Range" value={`${header.addrMin} ~ ${header.addrMax}`} />
-            <Field label="Product ID" value={`${header.productId}`} />
-            <Field label="Key ID" value={`${header.keyId}`} />
-            <Field label="Flags" value={`${header.flags}`} />
-            <Field label="Nonce" value={header.nonceHex} mono />
-            <Field label="Payload Len" value={`${header.payloadLen} 字节`} />
-            <Field label="Tag Len" value={`${header.tagLen} 字节`} />
-            <Field label="File Size" value={`${header.fileSize} 字节`} />
-          </div>
-        </div>
-      )}
-
-      {parameters.length > 0 && (
-        <>
-          <div className="sub-section-title">
-            参数表 ({parameters.length}) ·{' '}
-            <span className="muted">
-              控制: {parameters.filter((p) => p.paramType === 'control').length} / 保护:{' '}
-              {parameters.filter((p) => p.paramType === 'protection').length} · 可见:{' '}
-              {parameters.filter((p) => p.permission === 'visible').length} / 隐藏:{' '}
-              {parameters.filter((p) => p.permission === 'hidden').length}
-            </span>
-          </div>
-          <div className="param-two-column">
-            <ParamTable
-              title="参数 0 ~ 35"
-              parameters={parameters.slice(0, 36)}
-              indexOffset={0}
-              readonly
-              onChange={() => undefined}
-            />
-            <ParamTable
-              title="参数 36 ~ 71"
-              parameters={parameters.slice(36, 72)}
-              indexOffset={36}
-              readonly
-              onChange={() => undefined}
-            />
-          </div>
-          <details className="raw-card">
-            <summary>查看原始参数 JSON</summary>
-            <pre>{JSON.stringify(parameters, null, 2)}</pre>
-          </details>
-        </>
-      )}
     </section>
   );
 };

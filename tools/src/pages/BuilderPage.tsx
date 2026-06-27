@@ -149,92 +149,98 @@ export const BuilderPage: React.FC = () => {
   };
 
   return (
-    <section className="panel">
-      <div className="panel-header">
-        <div>
-          <h2 className="section-title">参数构建</h2>
-          <p className="section-subtitle">72 个固定参数 · 地址 0~71</p>
+    <section className="panel page-panel">
+      <div className="page-workspace">
+        <aside className="page-side-panel builder-side-panel">
+          <div className="side-panel-section">
+            <div className="side-panel-title">工程信息</div>
+            <label className="side-field">
+              <span>工程名称</span>
+              <input
+                value={project.projectName}
+                onChange={(e) => handleMetaChange('projectName', e.target.value)}
+              />
+            </label>
+            <label className="side-field">
+              <span>Product ID</span>
+              <input
+                type="number"
+                min={1}
+                value={project.productId}
+                onChange={(e) => handleMetaChange('productId', Number(e.target.value) || 1)}
+              />
+            </label>
+            <label className="side-field">
+              <span>Key ID</span>
+              <input
+                type="number"
+                min={1}
+                value={project.keyId}
+                onChange={(e) => handleMetaChange('keyId', Number(e.target.value) || 1)}
+              />
+            </label>
+            <label className="side-field">
+              <span>说明</span>
+              <textarea
+                value={project.description}
+                onChange={(e) => handleMetaChange('description', e.target.value)}
+                placeholder="工程描述（可选）"
+                rows={3}
+              />
+            </label>
+          </div>
+
+          <div className="side-panel-section">
+            <div className="side-panel-title">操作</div>
+            <div className="side-action-list">
+              <button onClick={handleNewProject} disabled={busy}>新建工程</button>
+              <button onClick={handleSaveProject} disabled={busy}>保存工程文件</button>
+              <button onClick={handleLoadProject} disabled={busy}>加载工程文件</button>
+              <button className="primary" onClick={handleValidate} disabled={busy}>一键校验</button>
+              <button className="primary" onClick={handleExportBin} disabled={busy}>生成加密 bin</button>
+            </div>
+          </div>
+
+          {status && (
+            <div className={`status-card side-status status-${status.kind}`}>
+              {status.text}
+            </div>
+          )}
+
+          {validationErrors.length > 0 && (
+            <div className="error-panel side-error-panel">
+              <div className="error-panel-title">校验问题 ({validationErrors.length})</div>
+              <ul className="error-list">
+                {validationErrors.map((err, i) => (
+                  <li key={i}>
+                    {err.address !== undefined && (
+                      <span className="error-addr">addr {err.address}</span>
+                    )}
+                    {err.field && <span className="error-field">{err.field}</span>}
+                    <span className="error-message">{err.message}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+
+        <div className="page-main-panel">
+          <div className="param-two-column">
+            <ParamTable
+              title="参数 0 ~ 35"
+              parameters={project.parameters.slice(0, 36)}
+              indexOffset={0}
+              onChange={handleParamChange}
+            />
+            <ParamTable
+              title="参数 36 ~ 71"
+              parameters={project.parameters.slice(36, 72)}
+              indexOffset={36}
+              onChange={handleParamChange}
+            />
+          </div>
         </div>
-      </div>
-
-      <div className="meta-row">
-        <label className="meta-field">
-          <span>工程名称</span>
-          <input
-            value={project.projectName}
-            onChange={(e) => handleMetaChange('projectName', e.target.value)}
-          />
-        </label>
-        <label className="meta-field">
-          <span>Product ID</span>
-          <input
-            type="number"
-            min={1}
-            value={project.productId}
-            onChange={(e) => handleMetaChange('productId', Number(e.target.value) || 1)}
-          />
-        </label>
-        <label className="meta-field">
-          <span>Key ID</span>
-          <input
-            type="number"
-            min={1}
-            value={project.keyId}
-            onChange={(e) => handleMetaChange('keyId', Number(e.target.value) || 1)}
-          />
-        </label>
-        <label className="meta-field meta-field-wide">
-          <span>说明</span>
-          <input
-            value={project.description}
-            onChange={(e) => handleMetaChange('description', e.target.value)}
-            placeholder="工程描述（可选）"
-          />
-        </label>
-      </div>
-
-      <div className="action-row">
-        <button onClick={handleNewProject} disabled={busy}>新建工程</button>
-        <button onClick={handleSaveProject} disabled={busy}>保存工程文件</button>
-        <button onClick={handleLoadProject} disabled={busy}>加载工程文件</button>
-        <button className="primary" onClick={handleValidate} disabled={busy}>一键校验</button>
-        <button className="primary" onClick={handleExportBin} disabled={busy}>生成加密 bin</button>
-      </div>
-
-      {status && (
-        <div className={`status-card status-${status.kind}`}>{status.text}</div>
-      )}
-
-      {validationErrors.length > 0 && (
-        <div className="error-panel">
-          <div className="error-panel-title">校验问题 ({validationErrors.length})</div>
-          <ul className="error-list">
-            {validationErrors.map((err, i) => (
-              <li key={i}>
-                {err.address !== undefined && (
-                  <span className="error-addr">addr {err.address}</span>
-                )}
-                {err.field && <span className="error-field">{err.field}</span>}
-                <span className="error-message">{err.message}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="param-two-column">
-        <ParamTable
-          title="参数 0 ~ 35"
-          parameters={project.parameters.slice(0, 36)}
-          indexOffset={0}
-          onChange={handleParamChange}
-        />
-        <ParamTable
-          title="参数 36 ~ 71"
-          parameters={project.parameters.slice(36, 72)}
-          indexOffset={36}
-          onChange={handleParamChange}
-        />
       </div>
     </section>
   );
