@@ -92,13 +92,11 @@ export const ParserPage: React.FC = () => {
           <div className={`status-card side-status status-${status.kind}`}>
             {status.text}
           </div>
-        </aside>
 
-        <div className="page-main-panel">
           {header && (
-            <div className="header-card">
-              <div className="header-card-title">Header 信息</div>
-              <div className="header-grid">
+            <div className="side-panel-section">
+              <div className="side-panel-title">Header 信息</div>
+              <div className="side-header-card">
                 <Field label="Magic" value={'"UEPB"'} />
                 <Field label="Header Len" value={`${header.headerLen} 字节`} />
                 <Field label="Format Version" value={`${header.formatVersion}`} />
@@ -115,7 +113,9 @@ export const ParserPage: React.FC = () => {
               </div>
             </div>
           )}
+        </aside>
 
+        <div className="page-main-panel parser-main-panel">
           {parameters.length > 0 && (
             <>
               <div className="sub-section-title">
@@ -144,11 +144,6 @@ export const ParserPage: React.FC = () => {
                   onChange={() => undefined}
                 />
               </div>
-
-              <details className="raw-card">
-                <summary>查看原始参数 JSON</summary>
-                <pre>{JSON.stringify(parameters, null, 2)}</pre>
-              </details>
             </>
           )}
 

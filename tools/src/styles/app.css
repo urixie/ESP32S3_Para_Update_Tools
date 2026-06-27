@@ -711,7 +711,8 @@ button {
 /* On the builder page the param tables are the entire right-hand content;
    keep them locked to the workspace height so the wrapper scrolls instead
    of the whole main panel. The parser page also lets its param tables use
-   the full height by default (raw JSON lives below in a collapsed <details>). */
+   the full height by default — Header info now lives in the left rail so
+   the right-hand main panel only has the param tables. */
 .builder-panel .page-main-panel {
   overflow: hidden;
 }
@@ -719,6 +720,34 @@ button {
 .builder-panel .param-two-column,
 .parser-panel .param-two-column {
   height: 100%;
+}
+
+/* The parser page now packs Header info into the left rail alongside the
+   action list and status card. Drop the inherited sticky positioning so
+   the rail can grow to its natural height (matching `align-items: stretch`
+   on the workspace grid) and add a viewport-bounded scroll for safety on
+   short screens. */
+.parser-side-panel {
+  position: static;
+  top: auto;
+  align-self: stretch;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* Let the parser main panel give its child param-two-column any leftover
+   height after the small sub-section-title row. */
+.parser-main-panel {
+  overflow: hidden;
+}
+
+.parser-main-panel .param-two-column {
+  flex: 1;
+  min-height: 0;
+}
+
+.parser-main-panel .sub-section-title {
+  flex: 0 0 auto;
 }
 
 /* A single column's card: title (optional) + table wrapper. */
@@ -1026,6 +1055,46 @@ button {
 }
 
 .header-field-value.mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  word-break: break-all;
+}
+
+/* Compact Header info shown in the parser page's left side rail.
+   `max-height` keeps the field stack from forcing the side rail past the
+   viewport — the rail itself scrolls if everything together would still
+   be taller than the workspace. */
+.side-header-card {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.58);
+  padding: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.side-header-card .header-field {
+  padding: 0.42rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.side-header-card .header-field-label {
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.side-header-card .header-field-value {
+  font-size: 0.76rem;
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+.side-header-card .header-field-value.mono {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   word-break: break-all;
 }
