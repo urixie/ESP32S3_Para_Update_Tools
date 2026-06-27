@@ -7,7 +7,12 @@ echo ========================================
 echo Param Bin Tool - Release EXE Builder
 echo ========================================
 
-cd /d "%~dp0"
+REM This script lives in <project>\release\, but it operates on the project
+REM files one level up (package.json, src-tauri\, ...). Move into the project
+REM root and remember the resolved absolute path so the later `cd` calls and
+REM output paths stay correct regardless of how the script was invoked.
+cd /d "%~dp0.."
+set "PROJECT_DIR=%CD%"
 
 echo.
 echo [1/8] Checking environment...
@@ -55,7 +60,7 @@ if errorlevel 1 (
 
 echo.
 echo [4/8] Running Rust tests...
-cd /d "%~dp0src-tauri"
+cd /d "%PROJECT_DIR%\src-tauri"
 call cargo test
 if errorlevel 1 (
     echo [ERROR] Rust tests failed.
@@ -72,7 +77,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-cd /d "%~dp0"
+cd /d "%PROJECT_DIR%"
 
 echo.
 echo [6/8] Preparing release directory...
@@ -80,8 +85,8 @@ if not exist release (
     mkdir release
 )
 
-set EXE_SRC=src-tauri\target\release\param_bin_tool.exe
-set EXE_DST=release\ParamBinTool.exe
+set EXE_SRC=%PROJECT_DIR%\src-tauri\target\release\param_bin_tool.exe
+set EXE_DST=%PROJECT_DIR%\release\ParamBinTool.exe
 
 if not exist "%EXE_SRC%" (
     echo [ERROR] Expected exe not found: %EXE_SRC%
@@ -141,13 +146,13 @@ echo   6. Fixed 72 parameters, addresses 0~71, fixed 48-byte Header + AES-GCM Pa
 echo.
 echo For ESP32 firmware integration, see docs/bin_protocol.md.
 echo.
-) > release\README.txt
+) > "%PROJECT_DIR%\release\README.txt"
 
 echo.
 echo [8/8] Done.
 echo ========================================
 echo Release exe generated:
-echo %~dp0release\ParamBinTool.exe
+echo %~dp0ParamBinTool.exe
 echo ========================================
 echo.
 

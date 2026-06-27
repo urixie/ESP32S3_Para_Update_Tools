@@ -48,7 +48,7 @@ export interface ParsedBinInfo {
 export const PARAM_COUNT = 72;
 export const ADDR_MIN = 0;
 export const ADDR_MAX = 71;
-export const NAME_MAX_CHARS = 20;
+export const NAME_MAX_CHARS = 30;
 export const NAME_MAX_BYTES = 96;
 
 /**

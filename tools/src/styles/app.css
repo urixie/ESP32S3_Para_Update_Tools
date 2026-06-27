@@ -468,12 +468,13 @@ button {
 /*
  * Fixed compact table layout.
  *
- * The old table used width: 100% and an auto name column. The name column then
- * absorbed all extra width, so the visible gaps between 地址 / 名称 / 默认值
- * looked inconsistent. This table now has a fixed content width and is centered
- * inside each card. Every column uses a fixed width and every cell uses the
- * same horizontal padding, so the gaps between address, name, value, type and
- * permission stay visually uniform in both left and right tables.
+ * The table uses a fixed content width and is centered inside each card.
+ * Every column uses a fixed width and every cell uses the same horizontal
+ * padding, so the gaps between address, name, value, type and permission stay
+ * visually uniform in both left and right tables.
+ *
+ * The name column is widened for 30-character parameter names while keeping
+ * the rest of the columns compact.
  */
 .param-table {
   width: max-content;
@@ -518,7 +519,7 @@ button {
 .param-table .col-name,
 .param-table th.col-name,
 .param-table td.name-cell {
-  width: 176px;
+  width: 246px;
 }
 
 .param-table .col-value,
