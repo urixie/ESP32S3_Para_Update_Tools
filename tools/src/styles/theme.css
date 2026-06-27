@@ -1,17 +1,32 @@
 :root {
-  --bg-main: #070b14;
-  --bg-panel: #0d1320;
-  --bg-card: #111827;
-  --bg-card-hover: #162033;
-  --border-soft: rgba(148, 163, 184, 0.18);
-  --border-strong: rgba(34, 211, 238, 0.35);
-  --text-main: #e5eefb;
-  --text-muted: #94a3b8;
+  color-scheme: dark;
+
+  --bg-main: #070d18;
+  --bg-panel: #0b1220;
+  --bg-card: #0f1728;
+  --bg-card-soft: #111c2f;
+  --bg-card-hover: #142238;
+  --bg-input: #101a2c;
+
+  --border-soft: rgba(148, 163, 184, 0.16);
+  --border-muted: rgba(148, 163, 184, 0.10);
+  --border-strong: rgba(34, 211, 238, 0.42);
+
+  --text-main: #e6f1ff;
+  --text-muted: #8ea2b8;
   --text-subtle: #64748b;
+
   --accent-cyan: #22d3ee;
   --accent-blue: #3b82f6;
-  --accent-green: #34d399;
+  --accent-green: #10b981;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
   --accent-purple: #a78bfa;
+
+  --row-hover: rgba(34, 211, 238, 0.055);
+  --row-active: rgba(34, 211, 238, 0.10);
+  --focus-ring: 0 0 0 2px rgba(34, 211, 238, 0.18);
+
   --radius-lg: 18px;
   --radius-md: 12px;
   --radius-sm: 8px;

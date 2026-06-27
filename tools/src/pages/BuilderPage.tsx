@@ -27,7 +27,7 @@ export const BuilderPage: React.FC = () => {
       nextParams[index] = { ...nextParams[index], ...data };
       return { ...prev, parameters: nextParams };
     });
-    // Clear stale validation feedback when the user edits something.
+
     if (validationErrors.length > 0) {
       setValidationErrors([]);
     }
@@ -77,7 +77,6 @@ export const BuilderPage: React.FC = () => {
         return;
       }
       const loaded = (await invoke('load_project_file_cmd', { path })) as ProjectFile;
-      // Defensive: always keep 72 rows.
       if (!loaded.parameters || loaded.parameters.length !== PARAM_COUNT) {
         const fresh = (await invoke('new_project')) as ProjectFile;
         loaded.parameters = fresh.parameters;
@@ -110,7 +109,7 @@ export const BuilderPage: React.FC = () => {
   const handleExportBin = async () => {
     try {
       setBusy(true);
-      // Always re-validate before exporting — refuse to ship a broken file.
+
       try {
         await invoke('validate_parameters_cmd', { params: project.parameters });
         setValidationErrors([]);
@@ -190,15 +189,26 @@ export const BuilderPage: React.FC = () => {
             </label>
           </div>
 
-          <div className="side-panel-section">
-            <div className="side-panel-title">操作</div>
-            <div className="side-action-list">
+          <div className="side-panel-section action-section">
+            <div className="side-panel-title">工程操作</div>
+            <div className="side-action-list secondary-actions">
               <button onClick={handleNewProject} disabled={busy}>新建工程</button>
               <button onClick={handleSaveProject} disabled={busy}>保存工程文件</button>
               <button onClick={handleLoadProject} disabled={busy}>加载工程文件</button>
-              <button className="primary" onClick={handleValidate} disabled={busy}>一键校验</button>
-              <button className="primary" onClick={handleExportBin} disabled={busy}>生成加密 bin</button>
             </div>
+          </div>
+
+          <div className="side-panel-section action-section">
+            <div className="side-panel-title">校验与导出</div>
+            <div className="side-action-list export-actions">
+              <button className="secondary-primary" onClick={handleValidate} disabled={busy}>
+                一键校验
+              </button>
+              <button className="primary primary-main" onClick={handleExportBin} disabled={busy}>
+                生成加密 bin
+              </button>
+            </div>
+            <div className="side-hint">导出前会自动重新校验 72 个参数。</div>
           </div>
 
           {status && (
