@@ -174,58 +174,33 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                     </div>
                   </td>
                   <td className="permission-cell">
-                    <div className={`checkbox-group permission ${fieldClass}`}>
-                      <label
-                        className={`checkbox-option is-visible ${param.permission === 'visible' ? 'is-checked' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={param.permission === 'visible'}
-                          readOnly={!readonly}
-                          disabled={readonly}
-                          onClick={() => {
-                            if (param.permission !== 'visible') {
-                              emitChange(index, {
-                                permission: 'visible' as ParamPermission,
-                              });
-                            }
-                          }}
-                          onChange={() => {
-                            if (param.permission !== 'visible') {
-                              emitChange(index, {
-                                permission: 'visible' as ParamPermission,
-                              });
-                            }
-                          }}
-                        />
-                        <span>{permissionLabel('visible')}</span>
-                      </label>
-                      <label
-                        className={`checkbox-option is-hidden ${param.permission === 'hidden' ? 'is-checked' : ''}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={param.permission === 'hidden'}
-                          readOnly={!readonly}
-                          disabled={readonly}
-                          onClick={() => {
-                            if (param.permission !== 'hidden') {
-                              emitChange(index, {
-                                permission: 'hidden' as ParamPermission,
-                              });
-                            }
-                          }}
-                          onChange={() => {
-                            if (param.permission !== 'hidden') {
-                              emitChange(index, {
-                                permission: 'hidden' as ParamPermission,
-                              });
-                            }
-                          }}
-                        />
-                        <span>{permissionLabel('hidden')}</span>
-                      </label>
-                    </div>
+                    <label
+                      className={`checkbox-option permission-toggle ${fieldClass} ${param.permission === 'visible' ? 'is-checked' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={param.permission === 'visible'}
+                        readOnly={!readonly}
+                        disabled={readonly}
+                        onClick={() => {
+                          // Single toggle: check → 'visible', uncheck → 'hidden'.
+                          emitChange(index, {
+                            permission: (param.permission === 'visible'
+                              ? 'hidden'
+                              : 'visible') as ParamPermission,
+                          });
+                        }}
+                        onChange={() => {
+                          // Safety net for browsers that ignore `readOnly`.
+                          emitChange(index, {
+                            permission: (param.permission === 'visible'
+                              ? 'hidden'
+                              : 'visible') as ParamPermission,
+                          });
+                        }}
+                      />
+                      <span>{permissionLabel(param.permission)}</span>
+                    </label>
                   </td>
                 </tr>
               );

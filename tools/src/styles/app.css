@@ -782,29 +782,34 @@ button {
   width: 48px;
 }
 
+/* Column widths sized so every cell has the same ~5.12px right-side
+   slack (matching the address badge's natural slack). With the uniform
+   0.34rem cell padding that gives every adjacent-column input a
+   constant ~16px visible gap, so the right edge of one input sits the
+   same distance from the left edge of the next regardless of column. */
 .param-table .col-name,
 .param-table th.col-name,
 .param-table td.name-cell {
-  width: 250px;
-  max-width: 250px;
+  width: 246px;
+  max-width: 246px;
 }
 
 .param-table .col-value,
 .param-table th.col-value,
 .param-table td.value-cell {
-  width: 82px;
+  width: 112px;
 }
 
 .param-table .col-type,
 .param-table th.col-type,
 .param-table td.type-cell {
-  width: 112px;
+  width: 116px;
 }
 
 .param-table .col-permission,
 .param-table th.col-permission,
 .param-table td.permission-cell {
-  width: 112px;
+  width: 64px;
 }
 
 .param-table tbody tr:hover {
@@ -860,9 +865,9 @@ button {
 }
 
 .value-input.compact-number {
-  width: 8ch;
-  max-width: 8ch;
-  min-width: 7ch;
+  width: 12ch;
+  max-width: 12ch;
+  min-width: 11ch;
   text-align: right;
   padding-left: 0.28rem;
   padding-right: 0.28rem;
@@ -958,22 +963,16 @@ button {
   cursor: default;
 }
 
-/* Permission column keeps the visible/hidden color cues from the old
-   segmented look so "可见" (green) and "隐藏" (red) still pop visually. */
-.checkbox-group.permission .checkbox-option.is-visible.is-checked {
+/* Permission column: a single checkbox where check = visible, uncheck =
+   hidden. Keep the green tint from the old segmented look so "已勾选 =
+   可见" reads visually. The unchecked state is intentionally neutral
+   (no red) — the absence of a check already communicates "hidden". */
+.checkbox-option.permission-toggle.is-checked {
   background: rgba(52, 211, 153, 0.18);
 }
 
-.checkbox-group.permission .checkbox-option.is-visible.is-checked input[type="checkbox"] {
+.checkbox-option.permission-toggle.is-checked input[type="checkbox"] {
   accent-color: rgb(52, 211, 153);
-}
-
-.checkbox-group.permission .checkbox-option.is-hidden.is-checked {
-  background: rgba(248, 113, 113, 0.14);
-}
-
-.checkbox-group.permission .checkbox-option.is-hidden.is-checked input[type="checkbox"] {
-  accent-color: rgb(248, 113, 113);
 }
 
 /* ===== Header info card (parser page) ===== */
