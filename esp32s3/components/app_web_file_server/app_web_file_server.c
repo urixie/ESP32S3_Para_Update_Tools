@@ -840,22 +840,19 @@ static esp_err_t delete_handler(httpd_req_t *req)
     return httpd_resp_sendstr(req, "{\"ok\":true}");
 }
 
-static void send_param_json(httpd_req_t *req, const app_param_bin_parameter_t *p, bool first)
+static void send_visible_param_json(httpd_req_t *req, const app_param_bin_parameter_t *p, bool first)
 {
     char buf[192];
     snprintf(buf, sizeof(buf),
-             "%s{\"address\":%u,\"name\":\"",
-             first ? "" : ",",
-             p->address);
+             "%s{\"name\":\"",
+             first ? "" : ",");
     httpd_resp_sendstr_chunk(req, buf);
     json_escape_send(req, p->name);
     snprintf(buf, sizeof(buf),
-             "\",\"defaultValue\":%u,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\",\"permission\":\"%s\",\"permissionLabel\":\"%s\"}",
+             "\",\"defaultValue\":%u,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\"}",
              p->default_value,
              app_param_bin_type_name(p->param_type),
-             app_param_bin_type_label(p->param_type),
-             app_param_bin_permission_name(p->permission),
-             app_param_bin_permission_label(p->permission));
+             app_param_bin_type_label(p->param_type));
     httpd_resp_sendstr_chunk(req, buf);
 }
 
@@ -894,26 +891,23 @@ static esp_err_t bin_parse_handler(httpd_req_t *req)
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
 
-    char hdr[360];
-    snprintf(hdr, sizeof(hdr),
-             "{\"ok\":true,\"file\":{\"path\":\"");
-    httpd_resp_sendstr_chunk(req, hdr);
-    json_escape_send(req, raw_path);
-    snprintf(hdr, sizeof(hdr),
-             "\"},\"header\":{\"headerSize\":%u,\"formatVersion\":%u,\"nonceHex\":\"%s\",\"ciphertextLen\":%lu,\"tagLen\":%u,\"fileSize\":%lu},\"parameters\":[",
-             parsed.header_size,
-             parsed.format_version,
-             parsed.nonce_hex,
-             (unsigned long)parsed.ciphertext_len,
-             parsed.tag_len,
-             (unsigned long)parsed.file_size);
-    httpd_resp_sendstr_chunk(req, hdr);
+    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"parameters\":[");
 
+    bool first = true;
+    size_t visible_count = 0;
     for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
-        send_param_json(req, &parsed.parameters[i], i == 0);
+        const app_param_bin_parameter_t *param = &parsed.parameters[i];
+        if (param->permission != APP_PARAM_BIN_PERMISSION_VISIBLE) {
+            continue;
+        }
+        send_visible_param_json(req, param, first);
+        first = false;
+        visible_count++;
     }
 
-    httpd_resp_sendstr_chunk(req, "]}");
+    char tail[64];
+    snprintf(tail, sizeof(tail), "],\"visibleCount\":%u}", (unsigned int)visible_count);
+    httpd_resp_sendstr_chunk(req, tail);
     return httpd_resp_send_chunk(req, NULL, 0);
 }
 

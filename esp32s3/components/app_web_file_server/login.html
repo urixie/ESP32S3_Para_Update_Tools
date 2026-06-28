@@ -10,12 +10,11 @@
 </head>
 <body>
 <main class="card">
-  <div class="brand"><div class="mark"></div><div><h1>UniEdge 参数解析后台</h1><p class="sub">ESP32-S3 加密 bin 文件解析</p></div></div>
+  <div class="brand"><div class="mark"></div><div><h1>UniEdge 驱动器参数配置平台</h1></div></div>
   <div class="field"><label for="u">用户名</label><input id="u" value="admin" autocomplete="username"></div>
   <div class="field"><label for="p">密码</label><input id="p" type="password" autocomplete="current-password" autofocus></div>
   <button onclick="login()">登录</button>
   <div id="m" class="msg"></div>
-  <div class="tip"><span class="pill">默认账号：admin / admin</span><br>正式量产前建议替换为 NVS 中的设备密码或一次性授权码。</div>
 </main>
 <script>
 const $=id=>document.getElementById(id);
