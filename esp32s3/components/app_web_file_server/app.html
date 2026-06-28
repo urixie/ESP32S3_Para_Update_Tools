@@ -5,85 +5,125 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>UniEdge 驱动器参数配置平台</title>
 <style>
-:root{color-scheme:dark;--bg:#0b111b;--panel:#121a27;--panel2:#0f1724;--line:#253248;--line2:#31425f;--text:#edf5ff;--muted:#91a2bb;--blue:#2f81f7;--blue2:#58a6ff;--gold:#e7c477;--green:#22c55e;--red:#ff7b72;--chip:#1f2a3b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 10% -10%,rgba(47,129,247,.25),transparent 30%),radial-gradient(circle at 92% 0,rgba(231,196,119,.15),transparent 28%),var(--bg);color:var(--text);font-family:Arial,'Microsoft YaHei',sans-serif}button,input,.file-label{font:inherit}button,.file-label{border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:#fff;background:#1a2534;cursor:pointer}.primary{border:0;background:linear-gradient(135deg,var(--blue),#1f6feb);font-weight:800}.danger{border-color:#7d3734;color:#ffd7d3;background:#3a2023}.ghost{background:transparent}.hidden{display:none!important}.app{max-width:1280px;margin:0 auto;padding:18px 14px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--gold));box-shadow:0 12px 26px rgba(47,129,247,.26)}h1{font-size:24px;margin:0}.sub,p{margin:4px 0;color:var(--muted)}.toolbar{border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.95),rgba(15,23,36,.95));padding:14px;margin-bottom:14px}.upload{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.muted{color:var(--muted)}input[type=file]{display:none}.msg{min-height:24px;color:var(--gold);margin-top:8px}.layout{display:grid;grid-template-columns:320px 1fr;gap:14px}.side,.main{border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.97),rgba(12,18,28,.98));box-shadow:0 20px 70px rgba(0,0,0,.22)}.side{padding:12px;min-height:620px}.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.side h2,.main h2{font-size:18px;margin:0}.bin-list{display:grid;gap:8px;max-height:560px;overflow:auto;padding-right:2px}.bin{width:100%;text-align:left;border:1px solid transparent;border-radius:14px;background:#0e1624;padding:12px;display:grid;gap:5px}.bin:hover{border-color:#2b4162}.bin.active{background:linear-gradient(135deg,rgba(47,129,247,.22),rgba(231,196,119,.08));border-color:#3d6fa8}.bin-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bin-meta{color:var(--muted);font-size:12px}.bin-row{position:relative;display:grid;grid-template-columns:1fr auto;gap:6px;align-items:stretch}.bin-row .bin{padding-right:64px}.bin-del{align-self:stretch;min-width:54px;border:1px solid #7d3734;color:#ffd7d3;background:#3a2023;border-radius:14px;padding:0 12px;font-size:13px;font-weight:700;cursor:pointer}.bin-del:hover{background:#5a2826;border-color:#a64844}.empty{border:1px dashed #364760;border-radius:14px;padding:28px 14px;text-align:center;color:var(--muted)}.main{padding:14px;min-width:0}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.actions{display:flex;gap:8px;flex-wrap:wrap}.action-btn{border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:#fff;background:#1a2534;cursor:pointer;font-weight:700;letter-spacing:.4px}.action-btn:hover:not(:disabled){background:#243247;border-color:#3d6fa8}.action-btn:disabled{opacity:.45;cursor:not-allowed}.action-btn.primary{border:0;background:linear-gradient(135deg,var(--blue),#1f6feb)}.subnav{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 14px;padding:6px;border:1px solid #26374f;border-radius:14px;background:rgba(15,23,36,.72)}.subtab{min-width:128px;border-radius:11px;background:transparent;color:var(--muted);font-weight:800}.subtab.active{border-color:#3d6fa8;background:linear-gradient(135deg,rgba(47,129,247,.32),rgba(231,196,119,.10));color:#fff}.subtab .num{margin-left:6px;color:var(--gold)}.result-layout{display:grid;grid-template-columns:148px 1fr;gap:14px;margin-top:6px}.param-tabs{display:grid;gap:8px;align-content:start}.param-tabs .subtab{width:100%;min-width:0;text-align:left;padding:11px 12px}.result-body{min-width:0}@media(max-width:640px){.result-layout{grid-template-columns:1fr}}.summary{margin:0 0 10px;color:var(--muted)}.table{overflow:auto;border:1px solid #26374f;border-radius:14px}table{width:100%;border-collapse:collapse;min-width:520px}th,td{padding:12px 14px;border-bottom:1px solid #26374f;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#121d2d;color:var(--gold);z-index:1}td.name{font-weight:800;color:#fff}.value{font-variant-numeric:tabular-nums;color:#dbeafe}.badge{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:3px 9px;background:var(--chip);font-size:12px}.err{color:#ffb4ac}.ok{color:#9ef0b8}@media(max-width:860px){.layout{grid-template-columns:1fr}.top{align-items:flex-start}.side{min-height:0}.bin-list{max-height:280px}}@media(max-width:520px){.actions button,.actions a{width:100%;text-align:center}.head{display:grid}.subtab{flex:1;min-width:0}}
+:root{color-scheme:dark;--bg:#0b111b;--nav:#08101c;--panel:#121a27;--panel2:#0f1724;--line:#253248;--line2:#31425f;--text:#edf5ff;--muted:#91a2bb;--blue:#2f81f7;--gold:#e7c477;--green:#22c55e;--red:#ff7b72;--chip:#1f2a3b}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% -10%,rgba(47,129,247,.25),transparent 30%),radial-gradient(circle at 92% 0,rgba(231,196,119,.15),transparent 28%),var(--bg);color:var(--text);font-family:Arial,'Microsoft YaHei',sans-serif}button,input,.file-label{font:inherit}button,.file-label{border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:#fff;background:#1a2534;cursor:pointer}.primary{border:0;background:linear-gradient(135deg,var(--blue),#1f6feb);font-weight:800}.danger{border-color:#7d3734;color:#ffd7d3;background:#3a2023}.danger:hover{background:#5a2826;border-color:#a64844}.ghost{background:transparent}.hidden{display:none!important}.root{min-height:100vh;display:grid;grid-template-columns:188px minmax(0,1fr)}.left-nav{position:sticky;top:0;height:100vh;padding:16px 12px;border-right:1px solid rgba(148,163,184,.16);background:linear-gradient(180deg,rgba(8,16,28,.98),rgba(5,10,18,.98));box-shadow:16px 0 50px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:14px}.nav-brand{display:flex;align-items:center;gap:10px;padding:4px 4px 12px;border-bottom:1px solid rgba(148,163,184,.14)}.mark{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,var(--blue),var(--gold));box-shadow:0 12px 26px rgba(47,129,247,.26)}.brand-title{font-size:15px;font-weight:900;line-height:1.2}.brand-sub{font-size:11px;color:var(--muted);margin-top:3px}.nav-menu{display:grid;gap:8px}.nav-btn{width:100%;min-height:52px;display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;border:1px solid transparent;background:transparent;color:var(--muted);font-weight:800;text-align:left}.nav-btn:hover{border-color:#2b4162;background:#0e1624;color:#fff}.nav-btn.active{border-color:#3d6fa8;background:linear-gradient(135deg,rgba(47,129,247,.26),rgba(231,196,119,.08));color:#fff}.nav-icon{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:#101b2c;color:var(--gold);font-size:14px}.nav-foot{margin-top:auto}.app{max-width:1320px;margin:0 auto;padding:18px 18px 26px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}h1{font-size:24px;margin:0}.sub,p{margin:4px 0;color:var(--muted)}.msg{min-height:24px;color:var(--gold);margin-top:8px}.ok{color:#9ef0b8}.err{color:#ffb4ac}.panel{border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.97),rgba(12,18,28,.98));box-shadow:0 20px 70px rgba(0,0,0,.22);padding:14px;min-width:0}.toolbar{border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.95),rgba(15,23,36,.95));padding:14px;margin-bottom:14px}.upload{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.muted{color:var(--muted)}input[type=file]{display:none}.view-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.view-title h2,.side h2,.main h2{font-size:18px;margin:0}.table{overflow:auto;border:1px solid #26374f;border-radius:14px}table{width:100%;border-collapse:collapse;min-width:620px}th,td{padding:12px 14px;border-bottom:1px solid #26374f;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#121d2d;color:var(--gold);z-index:1}td.name{font-weight:800;color:#fff}.value{font-variant-numeric:tabular-nums;color:#dbeafe}.file-actions,.actions{display:flex;gap:8px;flex-wrap:wrap}.file-actions a{border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:#9ef0b8;background:#142033;text-decoration:none;font-weight:700}.badge{display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:999px;padding:3px 9px;background:var(--chip);font-size:12px}.empty{border:1px dashed #364760;border-radius:14px;padding:28px 14px;text-align:center;color:var(--muted)}.param-shell{display:grid;grid-template-columns:320px minmax(0,1fr) 168px;gap:14px}.right-actions{display:grid;gap:10px;align-content:start;padding:14px;border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.97),rgba(12,18,28,.98));box-shadow:0 20px 70px rgba(0,0,0,.22)}.right-actions .action-btn{width:100%;padding:12px 10px;font-size:13px}.param-msg{min-height:18px;font-size:12px;line-height:1.4;color:var(--gold);padding:0 2px}.param-msg.ok{color:#9ef0b8}.param-msg.err{color:#ffb4ac}.side,.main{border:1px solid rgba(148,163,184,.18);border-radius:16px;background:linear-gradient(180deg,rgba(18,26,39,.97),rgba(12,18,28,.98));box-shadow:0 20px 70px rgba(0,0,0,.22)}.side{padding:12px;min-height:620px}.side-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.bin-list{display:grid;gap:8px;max-height:560px;overflow:auto;padding-right:2px}.bin{width:100%;text-align:left;border:1px solid transparent;border-radius:14px;background:#0e1624;padding:12px;display:grid;gap:5px}.bin:hover{border-color:#2b4162}.bin.active{background:linear-gradient(135deg,rgba(47,129,247,.22),rgba(231,196,119,.08));border-color:#3d6fa8}.bin-name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bin-meta{color:var(--muted);font-size:12px}.main{padding:14px;min-width:0}.head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.action-btn{border:1px solid var(--line);border-radius:10px;padding:9px 13px;color:#fff;background:#1a2534;cursor:pointer;font-weight:700;letter-spacing:.4px}.action-btn:hover:not(:disabled){background:#243247;border-color:#3d6fa8}.action-btn:disabled{opacity:.45;cursor:not-allowed}.action-btn.primary{border:0;background:linear-gradient(135deg,var(--blue),#1f6feb)}.result-layout{display:grid;grid-template-columns:148px 1fr;gap:14px;margin-top:6px}.param-tabs{display:grid;gap:8px;align-content:start}.subtab{width:100%;min-width:0;text-align:left;border-radius:11px;background:transparent;color:var(--muted);font-weight:800;padding:11px 12px}.subtab.active{border-color:#3d6fa8;background:linear-gradient(135deg,rgba(47,129,247,.32),rgba(231,196,119,.10));color:#fff}.subtab .num{margin-left:6px;color:var(--gold)}.result-body{min-width:0}.param-table table{min-width:520px}.page{display:block}.page.hidden{display:none!important}@media(max-width:1100px){.param-shell{grid-template-columns:300px minmax(0,1fr)}.right-actions{grid-column:1 / -1;grid-template-columns:repeat(4,minmax(0,1fr));padding:12px}.right-actions .action-btn{padding:10px}}@media(max-width:900px){.root{grid-template-columns:1fr}.left-nav{position:relative;height:auto;display:grid;grid-template-columns:1fr auto;align-items:center}.nav-brand{border-bottom:0;padding-bottom:4px}.nav-menu{grid-template-columns:1fr 1fr}.nav-foot{margin-top:0}.param-shell{grid-template-columns:1fr}.side{min-height:0}.bin-list{max-height:280px}}@media(max-width:640px){.app{padding:14px 10px}.left-nav{grid-template-columns:1fr}.top,.view-title,.head{display:grid}.result-layout{grid-template-columns:1fr}.actions button,.file-actions a{width:100%;text-align:center}.nav-menu{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<main class="app">
-  <header class="top">
-    <div class="brand"><div class="mark"></div><div><h1>UniEdge 驱动器参数配置平台</h1></div></div>
-    <button class="ghost" onclick="logout()">退出登录</button>
-  </header>
+<div class="root">
+  <aside class="left-nav">
+    <div class="nav-brand"><div class="mark"></div><div><div class="brand-title">UniEdge</div><div class="brand-sub">驱动器参数配置平台</div></div></div>
+    <nav class="nav-menu">
+      <button id="navFiles" class="nav-btn active" onclick="switchPage('files')"><span class="nav-icon">📁</span><span>文件管理</span></button>
+      <button id="navParams" class="nav-btn" onclick="switchPage('params')"><span class="nav-icon">⚙</span><span>参数配置</span></button>
+    </nav>
+    <div class="nav-foot"><button class="ghost" onclick="logout()">退出登录</button></div>
+  </aside>
 
-  <section class="toolbar">
-    <div class="upload">
-      <label class="file-label" for="file">选择 bin 文件</label>
-      <input id="file" type="file" accept=".bin,application/octet-stream">
-      <span id="fileName" class="muted">未选择文件</span>
-      <button id="uploadBtn" class="primary" onclick="upload()">上传文件</button>
-      <button id="refreshBtn" onclick="loadFiles()">刷新列表</button>
-    </div>
-    <div id="msg" class="msg"></div>
-  </section>
+  <main class="app">
+    <header class="top">
+      <div><p id="pageHint"></p></div>
+    </header>
 
-  <section class="layout">
-    <aside class="side">
-      <div class="side-head"><h2>bin 文件列表</h2><span id="binCount" class="badge">0</span></div>
-      <div id="binList" class="bin-list"></div>
-      <div id="binEmpty" class="empty hidden">暂无 bin 文件</div>
-    </aside>
+    <section id="filePage" class="page">
+      <section class="toolbar">
+        <div class="upload">
+          <label class="file-label" for="file">选择文件</label>
+          <input id="file" type="file">
+          <span id="fileName" class="muted">未选择文件</span>
+          <button id="uploadBtn" class="primary" onclick="upload()">上传文件</button>
+          <button id="refreshBtn" onclick="loadFiles()">刷新列表</button>
+        </div>
+        <div id="msg" class="msg"></div>
+      </section>
 
-    <section class="main">
-      <div class="head">
-        <div><h2 id="title">请选择一个 bin 文件</h2><p id="hint">左侧每个 bin 文件对应一个参数解析界面。</p></div>
-        <div class="actions">
+      <section class="panel">
+        <div class="view-title"><div><h2>文件列表</h2></div><span id="fileCount" class="badge">0</span></div>
+        <div id="fileEmpty" class="empty hidden">暂无文件，请先上传。</div>
+        <div id="fileTable" class="table"><table><thead><tr><th>文件名</th><th>类型</th><th>操作</th></tr></thead><tbody id="fileRows"></tbody></table></div>
+      </section>
+    </section>
+
+    <section id="paramPage" class="page hidden">
+      <section class="param-shell">
+        <aside class="side">
+          <div class="side-head"><h2>bin 文件列表</h2><span id="binCount" class="badge">0</span></div>
+          <div id="binList" class="bin-list"></div>
+          <div id="binEmpty" class="empty hidden">暂无 bin 文件，请先到“文件管理”界面上传。</div>
+        </aside>
+
+        <section class="main">
+          <div class="head">
+            <div><h2 id="title">请选择一个 bin 文件</h2><p id="hint">左侧每个 bin 文件对应一个参数解析界面。</p></div>
+          </div>
+
+          <div id="idle" class="empty">请选择左侧 bin 文件，ESP32 后端会解析并只返回可见参数。</div>
+          <div id="parseErr" class="empty err hidden"></div>
+          <div id="result" class="hidden">
+            <div class="result-layout">
+              <nav class="param-tabs">
+                <button id="tabControl" class="subtab active" onclick="switchParamType('control')">控制参数<span id="controlCount" class="num">0</span></button>
+                <button id="tabProtection" class="subtab" onclick="switchParamType('protection')">保护参数<span id="protectionCount" class="num">0</span></button>
+              </nav>
+              <div class="result-body">
+                <div id="paramEmpty" class="empty hidden">当前分类暂无可见参数</div>
+                <div id="paramTable" class="table param-table"><table><thead><tr><th>参数名称</th><th>默认值</th></tr></thead><tbody id="paramRows"></tbody></table></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="right-actions">
           <button class="action-btn" id="btnConnect" onclick="actConnect()">板卡连接</button>
           <button class="action-btn" id="btnDefault" onclick="actDefault()" disabled>默认参数</button>
           <button class="action-btn" id="btnReadback" onclick="actReadback()" disabled>参数回读</button>
           <button class="action-btn" id="btnDownload" onclick="actDownload()" disabled>参数下载</button>
-        </div>
-      </div>
-
-      <div id="idle" class="empty"></div>
-      <div id="parseErr" class="empty err hidden"></div>
-      <div id="result" class="hidden">
-        <div class="result-layout">
-          <nav class="param-tabs">
-            <button id="tabControl" class="subtab active" onclick="switchParamType('control')">控制参数<span id="controlCount" class="num">0</span></button>
-            <button id="tabProtection" class="subtab" onclick="switchParamType('protection')">保护参数<span id="protectionCount" class="num">0</span></button>
-          </nav>
-          <div class="result-body">
-            <div id="paramEmpty" class="empty hidden">当前分类暂无可见参数</div>
-            <div id="paramTable" class="table"><table><thead><tr><th>参数名称</th><th>默认值</th></tr></thead><tbody id="paramRows"></tbody></table></div>
-          </div>
-        </div>
-      </div>
+          <div id="paramMsg" class="param-msg"></div>
+        </aside>
+      </section>
     </section>
-  </section>
-</main>
+  </main>
+</div>
+
 <script>
 const $=id=>document.getElementById(id);
-let allFiles=[],binFiles=[],selected=null,uploading=false,parsedParams=[],currentParamType='control';
+let allFiles=[],binFiles=[],selected=null,uploading=false,parsedParams=[],currentParamType='control',currentPage='files';
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setMsg(s,ok=false){$('msg').className='msg '+(ok?'ok':'');$('msg').textContent=s||''}
+function setParamMsg(s,kind){$('paramMsg').className='param-msg '+(kind||'');$('paramMsg').textContent=s||''}
 async function readErr(r){try{const j=await r.clone().json();return j.error||r.statusText}catch(e){return await r.text()||r.statusText}}
 function xhrErrorText(x){try{const j=JSON.parse(x.responseText||'{}');return j.error||x.statusText}catch(e){return x.responseText||x.statusText||'连接失败'}}
 function setBusy(b){uploading=b;$('uploadBtn').disabled=b;$('refreshBtn').disabled=b}
 async function checkAuth(){try{const r=await fetch('/api/auth/status');if(!r.ok){location.href='/';return;}await loadFiles();}catch(e){location.href='/'}}
 function isBin(f){return !f.is_dir&&(f.is_param_bin||/\.bin$/i.test(f.name||''));}
 function normParamType(p){return String(p.paramType||'').toLowerCase();}
-function visibleParams(){return parsedParams;}
+function fileTypeLabel(f){return f.is_dir?'目录':(f.kind_label||f.firmware_label||(isBin(f)?'加密参数 bin':'普通文件'));}
+function switchPage(page){
+  currentPage=page;
+  $('filePage').classList.toggle('hidden',page!=='files');
+  $('paramPage').classList.toggle('hidden',page!=='params');
+  $('navFiles').classList.toggle('active',page==='files');
+  $('navParams').classList.toggle('active',page==='params');
+  $('pageHint').textContent='';
+  if(page==='params'&&!selected&&binFiles.length>0)selectBin(binFiles[0].path);
+}
+function renderFiles(){
+  $('fileCount').textContent=allFiles.length;
+  $('fileEmpty').classList.toggle('hidden',allFiles.length>0);
+  $('fileTable').classList.toggle('hidden',allFiles.length===0);
+  $('fileRows').innerHTML=allFiles.map(f=>{
+    const p=encodeURIComponent(f.path);
+    const actions=f.is_dir?'':('<div class="file-actions"><a href="/download?path='+p+'">下载</a><button class="danger file-del" data-path="'+esc(f.path)+'">删除</button></div>');
+    return '<tr><td class="name">'+esc(f.name)+'</td><td><span class="badge">'+esc(fileTypeLabel(f))+'</span></td><td>'+actions+'</td></tr>';
+  }).join('');
+  document.querySelectorAll('.file-del').forEach(b=>b.onclick=()=>deleteFileByPath(b.dataset.path));
+}
 function renderBins(){
   binFiles=allFiles.filter(isBin).sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-CN'));
   $('binCount').textContent=binFiles.length;
   $('binEmpty').classList.toggle('hidden',binFiles.length>0);
-  $('binList').innerHTML=binFiles.map(f=>'<div class="bin-row '+(selected&&selected.path===f.path?'active':'')+'">'
-    +'<button class="bin '+(selected&&selected.path===f.path?'active':'')+'" data-path="'+esc(f.path)+'"><span class="bin-name">'+esc(f.name)+'</span><span class="bin-meta">点击查看参数</span></button>'
-    +'<button class="bin-del" data-path="'+esc(f.path)+'" title="删除 '+esc(f.name)+'">删除</button>'
-    +'</div>').join('');
+  $('binList').innerHTML=binFiles.map(f=>'<button class="bin '+(selected&&selected.path===f.path?'active':'')+'" data-path="'+esc(f.path)+'"><span class="bin-name">'+esc(f.name)+'</span><span class="bin-meta">点击查看参数</span></button>').join('');
   document.querySelectorAll('.bin').forEach(b=>b.onclick=()=>selectBin(b.dataset.path));
-  document.querySelectorAll('.bin-del').forEach(b=>b.onclick=e=>{e.stopPropagation();deleteBinByPath(b.dataset.path);});
 }
 function selectBin(path){
   selected=binFiles.find(f=>f.path===path)||null;
@@ -104,11 +144,11 @@ async function loadFiles(){
     const j=await r.json();
     if(r.status===401){location.href='/';return;}
     if(!r.ok)throw new Error(j.error||r.statusText);
-    allFiles=(j.files||[]).filter(f=>f.name!=='System Volume Information');
+    allFiles=(j.files||[]).filter(f=>f.name!=='System Volume Information').sort((a,b)=>String(a.name).localeCompare(String(b.name),'zh-CN'));
     if(selected){const still=allFiles.find(f=>f.path===selected.path);selected=still&&isBin(still)?still:null;}
-    renderBins();
-    setMsg('文件列表已更新，共 '+binFiles.length+' 个 bin',true);
-    if(!selected&&binFiles.length>0)selectBin(binFiles[0].path);
+    renderFiles();renderBins();
+    setMsg('文件列表已更新，共 '+allFiles.length+' 个文件，其中 bin '+binFiles.length+' 个',true);
+    if(currentPage==='params'&&!selected&&binFiles.length>0)selectBin(binFiles[0].path);
   }catch(e){setMsg('加载失败：'+e.message)}
 }
 function upload(){
@@ -124,20 +164,15 @@ function upload(){
   x.ontimeout=()=>{setBusy(false);setMsg('上传失败：连接超时')};
   x.timeout=0;x.send(f);
 }
-function switchParamType(type){
-  currentParamType=type;
-  renderParamTable();
-}
+function switchParamType(type){currentParamType=type;renderParamTable();}
 function renderParamTable(){
-  const visible=visibleParams();
-  const control=visible.filter(p=>normParamType(p)==='control');
-  const protection=visible.filter(p=>normParamType(p)==='protection');
+  const control=parsedParams.filter(p=>normParamType(p)==='control');
+  const protection=parsedParams.filter(p=>normParamType(p)==='protection');
   $('controlCount').textContent=control.length;
   $('protectionCount').textContent=protection.length;
   $('tabControl').classList.toggle('active',currentParamType==='control');
   $('tabProtection').classList.toggle('active',currentParamType==='protection');
   const list=(currentParamType==='control'?control:protection).slice();
-  // 已移除“当前显示 N 个可见参数”的分类提示，仅保留分页按钮
   $('paramRows').innerHTML=list.map(p=>'<tr><td class="name">'+esc(p.name)+'</td><td class="value">'+esc(p.defaultValue)+'</td></tr>').join('');
   $('paramEmpty').classList.toggle('hidden',list.length>0);
   $('paramTable').classList.toggle('hidden',list.length===0);
@@ -159,10 +194,10 @@ async function parseSelected(){
     $('hint').textContent='';
   }catch(e){$('parseErr').textContent='解析失败：'+e.message;$('parseErr').classList.remove('hidden');$('hint').textContent='解析失败，请确认该文件由 tools 生成且密钥一致';}
 }
-async function deleteBinByPath(path){
-  const f=binFiles.find(x=>x.path===path);
-  if(!f)return;
-  if(!confirm('确认删除 '+f.name+' 吗？'))return;
+async function deleteFileByPath(path){
+  const f=allFiles.find(x=>x.path===path);
+  const name=f?f.name:path;
+  if(!confirm('确认删除 '+name+' 吗？'))return;
   setMsg('正在删除文件...');
   const body='path='+encodeURIComponent(path);
   const r=await fetch('/delete',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
@@ -170,31 +205,17 @@ async function deleteBinByPath(path){
   if(!r.ok){setMsg('删除失败：'+await readErr(r));return;}
   if(selected&&selected.path===path){
     selected=null;parsedParams=[];$('result').classList.add('hidden');$('idle').classList.remove('hidden');$('parseErr').classList.add('hidden');
+    $('title').textContent='请选择一个 bin 文件';$('hint').textContent='左侧每个 bin 文件对应一个参数解析界面。';
+    $('btnDefault').disabled=true;$('btnReadback').disabled=true;$('btnDownload').disabled=true;
   }
   setMsg('删除完成',true);loadFiles();
 }
 async function logout(){try{await fetch('/api/logout',{method:'POST'})}catch(e){}location.href='/'}
 // 预留的 4 个动作按钮——后续接入：板卡握手、恢复默认、从设备回读参数、生成参数 bin 下载
-async function actConnect(){
-  if(!selected){setMsg('请先选择一个 bin 文件');return;}
-  setMsg('正在连接板卡...');
-  // TODO: 调用 /api/board/connect 等接口
-}
-function actDefault(){
-  if(!selected)return;
-  // TODO: 恢复参数为默认值
-  setMsg('已恢复默认参数');
-}
-function actReadback(){
-  if(!selected)return;
-  // TODO: 从板卡回读参数覆盖当前解析
-  setMsg('参数回读中...');
-}
-function actDownload(){
-  if(!selected)return;
-  // TODO: 打包当前参数为 bin 并触发下载
-  setMsg('参数下载中...');
-}
+async function actConnect(){if(!selected){setParamMsg('请先选择一个 bin 文件','err');return;}setParamMsg('正在连接板卡...');}
+function actDefault(){if(!selected)return;setParamMsg('已恢复默认参数','ok');}
+function actReadback(){if(!selected)return;setParamMsg('参数回读中...');}
+function actDownload(){if(!selected)return;setParamMsg('参数下载中...');}
 checkAuth();
 </script>
 </body>
