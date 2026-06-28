@@ -7,6 +7,8 @@ import {
   ProjectFile,
   ValidationError,
   PARAM_COUNT,
+  BOARD_NAME_MAX_CHARS,
+  limitBoardNameChars,
 } from '../types/parameter';
 import { ParamTable } from '../components/ParamTable';
 
@@ -81,6 +83,9 @@ export const BuilderPage: React.FC = () => {
         const fresh = (await invoke('new_project')) as ProjectFile;
         loaded.parameters = fresh.parameters;
       }
+      if (!loaded.boardName) {
+        loaded.boardName = '默认板卡';
+      }
       setProject(loaded);
       setValidationErrors([]);
       setStatus({ kind: 'success', text: `工程已加载: ${path}` });
@@ -94,6 +99,12 @@ export const BuilderPage: React.FC = () => {
   const handleExportBin = async () => {
     try {
       setBusy(true);
+
+      const boardName = project.boardName.trim();
+      if (!boardName) {
+        setStatus({ kind: 'error', text: '请先输入板卡名称。' });
+        return;
+      }
 
       try {
         await invoke('validate_parameters_cmd', { params: project.parameters });
@@ -120,6 +131,7 @@ export const BuilderPage: React.FC = () => {
 
       await invoke('export_encrypted_bin_cmd', {
         path,
+        boardName,
         params: project.parameters,
       });
       setStatus({ kind: 'success', text: `加密 bin 已生成: ${path}` });
@@ -141,6 +153,16 @@ export const BuilderPage: React.FC = () => {
               <input
                 value={project.projectName}
                 onChange={(e) => handleMetaChange('projectName', e.target.value)}
+              />
+            </label>
+            <label className="side-field">
+              <span>板卡名称</span>
+              <input
+                value={project.boardName}
+                maxLength={BOARD_NAME_MAX_CHARS}
+                onChange={(e) => handleMetaChange('boardName', limitBoardNameChars(e.target.value))}
+                placeholder="请输入中文板卡名称"
+                title={`最多 ${BOARD_NAME_MAX_CHARS} 个字符，写入加密 bin Payload`}
               />
             </label>
             <label className="side-field">

@@ -1,42 +1,66 @@
 //! Encode / decode the plaintext payload that is fed into AES-GCM.
 //!
-//! Layout (all little-endian):
+//! Layout v2 (all little-endian):
 //!
 //! ```text
-//! +--------------------------+
-//! | Payload Header (16 B)    |
-//! +--------------------------+
-//! | Parameter Record[72]     |   72 * 12 = 864 bytes
-//! +--------------------------+
-//! | Name Table               |   concatenated UTF-8, no separator
-//! +--------------------------+
+//! +------------------------------+
+//! | Payload Header (20 B)        |
+//! +------------------------------+
+//! | Parameter Record[72]         |   72 * 12 = 864 bytes
+//! +------------------------------+
+//! | Board Name                   |   UTF-8, encrypted metadata
+//! +------------------------------+
+//! | Parameter Name Table         |   concatenated UTF-8, no separator
+//! +------------------------------+
 //! ```
 
 use crate::error::AppError;
-use crate::model::{Parameter, ParamPermission, ParamType, ADDR_MAX, ADDR_MIN, PARAM_COUNT};
+use crate::model::{
+    Parameter, ParamPermission, ParamType, ADDR_MAX, ADDR_MIN, BOARD_NAME_MAX_BYTES, PARAM_COUNT,
+};
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
 
 /// Magic bytes marking the start of the payload plaintext.
 pub const PAYLOAD_MAGIC: &[u8; 4] = b"UPLD";
-/// Payload Header size, fixed for the first schema version.
-pub const PAYLOAD_HEADER_LEN: usize = 16;
+/// Payload Header size for schema v2.
+pub const PAYLOAD_HEADER_LEN: usize = 20;
 /// Each Parameter Record is exactly 12 bytes.
 pub const RECORD_SIZE: u8 = 12;
-/// Payload schema version this module understands.
-pub const SCHEMA_VERSION: u16 = 1;
+/// Payload schema version. v2 adds encrypted board_name metadata and does not
+/// keep compatibility with v1 bins.
+pub const SCHEMA_VERSION: u16 = 2;
 
-/// Encode the payload plaintext from a list of parameters.
+fn validate_board_name(board_name: &str) -> Result<&str, AppError> {
+    let trimmed = board_name.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::EmptyBoardName);
+    }
+    let actual = trimmed.as_bytes().len();
+    if actual > BOARD_NAME_MAX_BYTES {
+        return Err(AppError::BoardNameTooLong {
+            max: BOARD_NAME_MAX_BYTES,
+            actual,
+        });
+    }
+    Ok(trimmed)
+}
+
+/// Encode the payload plaintext from a board name and list of parameters.
 ///
 /// `parameters` MUST contain exactly `PARAM_COUNT` entries. The function will
 /// reject anything else before touching the byte buffer so callers don't
 /// silently write garbage to a bin file.
-pub fn encode_payload(parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
+pub fn encode_payload(board_name: &str, parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
     if parameters.len() != PARAM_COUNT {
         return Err(AppError::InvalidParameterCount(parameters.len()));
     }
 
-    // --- Step 1: build the Name Table and per-record (offset, len) tuples ---
+    let board_name = validate_board_name(board_name)?;
+    let board_name_bytes = board_name.as_bytes();
+    let board_name_len = board_name_bytes.len() as u16;
+
+    // --- Step 1: build the Parameter Name Table and per-record tuples ---
     let mut name_table = Vec::new();
     let mut name_meta: Vec<(u16, u16)> = Vec::with_capacity(PARAM_COUNT);
     for p in parameters {
@@ -56,15 +80,19 @@ pub fn encode_payload(parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
 
     let name_table_len = name_table.len() as u16;
 
-    // --- Step 2: write the Payload Header ---
-    let mut out = Vec::with_capacity(PAYLOAD_HEADER_LEN + PARAM_COUNT * RECORD_SIZE as usize + name_table.len());
+    // --- Step 2: write the Payload Header v2 ---
+    let mut out = Vec::with_capacity(
+        PAYLOAD_HEADER_LEN + PARAM_COUNT * RECORD_SIZE as usize + board_name_bytes.len() + name_table.len(),
+    );
     out.extend_from_slice(PAYLOAD_MAGIC);
     out.write_u16::<LittleEndian>(SCHEMA_VERSION).unwrap();
     out.write_u8(PARAM_COUNT as u8).unwrap();
     out.write_u8(RECORD_SIZE).unwrap();
+    out.write_u16::<LittleEndian>(board_name_len).unwrap();
     out.write_u16::<LittleEndian>(name_table_len).unwrap();
     out.write_u16::<LittleEndian>(0).unwrap(); // payload_flags
-    out.write_u32::<LittleEndian>(0).unwrap(); // payload_crc
+    out.write_u16::<LittleEndian>(0).unwrap(); // reserved
+    out.write_u32::<LittleEndian>(0).unwrap(); // payload_crc, reserved
     debug_assert_eq!(out.len(), PAYLOAD_HEADER_LEN);
 
     // --- Step 3: write 72 Parameter Records ---
@@ -80,25 +108,26 @@ pub fn encode_payload(parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
         out.write_u16::<LittleEndian>(0).unwrap(); // reserved1
     }
 
-    // --- Step 4: append the Name Table ---
+    // --- Step 4: append encrypted board name and parameter names ---
+    out.write_all(board_name_bytes).unwrap();
     out.write_all(&name_table).unwrap();
 
     Ok(out)
 }
 
-/// Decode the payload plaintext back into a list of parameters.
+/// Decode the payload plaintext back into `(board_name, parameters)`.
 ///
-/// Performs structural validation along the way: Header magic, schema version,
-/// record size, address range, address uniqueness, name offsets and name UTF-8
-/// boundaries.
-pub fn decode_payload(payload: &[u8]) -> Result<Vec<Parameter>, AppError> {
+/// Performs structural validation: Header magic, schema version, record size,
+/// board-name UTF-8, address range, address uniqueness, name offsets and name
+/// UTF-8 boundaries.
+pub fn decode_payload(payload: &[u8]) -> Result<(String, Vec<Parameter>), AppError> {
     if payload.len() < PAYLOAD_HEADER_LEN {
         return Err(AppError::PayloadTooShort);
     }
 
     let mut cur = Cursor::new(payload);
 
-    // --- Payload Header ---
+    // --- Payload Header v2 ---
     let mut magic = [0u8; 4];
     cur.read_exact(&mut magic).map_err(|_| AppError::PayloadTooShort)?;
     if &magic != PAYLOAD_MAGIC {
@@ -116,17 +145,32 @@ pub fn decode_payload(payload: &[u8]) -> Result<Vec<Parameter>, AppError> {
     if record_size != RECORD_SIZE {
         return Err(AppError::InvalidRecordSize(record_size));
     }
+    let board_name_len = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)? as usize;
     let name_table_len = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)? as usize;
     let _payload_flags = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
+    let _reserved = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
     let _payload_crc = cur.read_u32::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
 
+    if board_name_len == 0 || board_name_len > BOARD_NAME_MAX_BYTES {
+        return Err(AppError::BoardNameOutOfBounds);
+    }
+
     let records_total = (param_count as usize) * (record_size as usize);
-    let expected_total = PAYLOAD_HEADER_LEN + records_total + name_table_len;
+    let board_name_offset = PAYLOAD_HEADER_LEN + records_total;
+    let name_table_offset = board_name_offset
+        .checked_add(board_name_len)
+        .ok_or(AppError::PayloadTooShort)?;
+    let expected_total = name_table_offset
+        .checked_add(name_table_len)
+        .ok_or(AppError::PayloadTooShort)?;
     if payload.len() < expected_total {
         return Err(AppError::PayloadTooShort);
     }
 
-    let name_table_offset = PAYLOAD_HEADER_LEN + records_total;
+    let board_name_bytes = &payload[board_name_offset..board_name_offset + board_name_len];
+    let board_name = std::str::from_utf8(board_name_bytes)
+        .map_err(|_| AppError::InvalidUtf8BoardName)?
+        .to_string();
 
     // --- 72 Parameter Records ---
     let mut parameters = Vec::with_capacity(PARAM_COUNT);
@@ -178,5 +222,5 @@ pub fn decode_payload(payload: &[u8]) -> Result<Vec<Parameter>, AppError> {
         });
     }
 
-    Ok(parameters)
+    Ok((board_name, parameters))
 }

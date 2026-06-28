@@ -7,6 +7,13 @@ pub const PARAM_COUNT: usize = 72;
 pub const ADDR_MIN: u8 = 0;
 pub const ADDR_MAX: u8 = 71;
 
+/// Maximum length of a board name in Unicode characters.
+pub const BOARD_NAME_MAX_CHARS: usize = 32;
+
+/// Maximum length of a UTF-8 encoded board name in bytes. Chinese board names
+/// stay encrypted in the bin payload and are decoded only by the ESP32/tools.
+pub const BOARD_NAME_MAX_BYTES: usize = 96;
+
 /// Maximum length of a parameter name in Unicode characters.
 pub const NAME_MAX_CHARS: usize = 30;
 
@@ -14,6 +21,10 @@ pub const NAME_MAX_CHARS: usize = 30;
 /// protocol-level safety limit; `NAME_MAX_CHARS` is the user-facing limit
 /// and `NAME_MAX_BYTES` is the hard limit enforced on the wire.
 pub const NAME_MAX_BYTES: usize = 96;
+
+pub fn default_board_name() -> String {
+    "默认板卡".to_string()
+}
 
 /// Type of a parameter (control vs protection).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,13 +98,15 @@ pub struct Parameter {
 /// Project file (JSON, plaintext, used internally by the engineer only).
 ///
 /// Note: this is NOT the bin file format. It is a human-readable JSON file the
-/// engineer can save and reload from the GUI. Product/key identifiers are not
-/// exposed because the current product uses one fixed key.
+/// engineer can save and reload from the GUI. The board name is stored here for
+/// editing convenience and is encrypted when exported into the `.bin` file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFile {
     pub project_name: String,
     pub format_version: u16,
+    #[serde(default = "default_board_name")]
+    pub board_name: String,
     pub description: String,
     pub parameters: Vec<Parameter>,
 }
@@ -102,7 +115,8 @@ impl Default for ProjectFile {
     fn default() -> Self {
         Self {
             project_name: "default_project".to_string(),
-            format_version: 1,
+            format_version: 2,
+            board_name: default_board_name(),
             description: String::new(),
             parameters: create_default_parameters(),
         }
@@ -127,6 +141,7 @@ pub struct BinHeaderInfo {
 #[serde(rename_all = "camelCase")]
 pub struct ParsedBinInfo {
     pub header: BinHeaderInfo,
+    pub board_name: String,
     pub parameters: Vec<Parameter>,
 }
 

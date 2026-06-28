@@ -50,9 +50,10 @@ pub fn load_project_file_cmd(path: String) -> Result<ProjectFile, String> {
     to_string_err(load_project_file(std::path::Path::new(&path)))
 }
 
-/// Encrypt parameters and write the resulting bin file to `path`.
+/// Encrypt board name + parameters and write the resulting bin file to `path`.
+#[allow(non_snake_case)]
 #[tauri::command]
-pub fn export_encrypted_bin_cmd(path: String, params: Vec<Parameter>) -> Result<(), String> {
+pub fn export_encrypted_bin_cmd(path: String, boardName: String, params: Vec<Parameter>) -> Result<(), String> {
     // Reject the export early if validation fails — we don't want to ship a
     // broken bin file even by accident.
     let errors = validate_parameters(&params);
@@ -65,11 +66,11 @@ pub fn export_encrypted_bin_cmd(path: String, params: Vec<Parameter>) -> Result<
         return Err(format!("参数校验失败: {}", summary));
     }
 
-    let bytes = to_string_err(export_encrypted_bin_bytes(&params))?;
+    let bytes = to_string_err(export_encrypted_bin_bytes(&boardName, &params))?;
     to_string_err(write_bin_file(std::path::Path::new(&path), &bytes).map(|_| ()))
 }
 
-/// Read and decrypt a bin file from `path`, returning all parameters + compact
+/// Read and decrypt a bin file from `path`, returning board name + all parameters + compact
 /// header information.
 #[tauri::command]
 pub fn parse_encrypted_bin_cmd(path: String) -> Result<ParsedBinInfo, String> {

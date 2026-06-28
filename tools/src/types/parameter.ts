@@ -12,6 +12,7 @@ export interface Parameter {
 export interface ProjectFile {
   projectName: string;
   formatVersion: number;
+  boardName: string;
   description: string;
   parameters: Parameter[];
 }
@@ -33,14 +34,26 @@ export interface BinHeaderInfo {
 
 export interface ParsedBinInfo {
   header: BinHeaderInfo;
+  boardName: string;
   parameters: Parameter[];
 }
 
 export const PARAM_COUNT = 72;
 export const ADDR_MIN = 0;
 export const ADDR_MAX = 71;
+export const BOARD_NAME_MAX_CHARS = 32;
+export const BOARD_NAME_MAX_BYTES = 96;
 export const NAME_MAX_CHARS = 30;
 export const NAME_MAX_BYTES = 96;
+
+/**
+ * Truncate a string to at most max Unicode characters (code points).
+ */
+const limitChars = (value: string, maxChars: number): string =>
+  Array.from(value).slice(0, maxChars).join('');
+
+export const limitBoardNameChars = (value: string): string =>
+  limitChars(value, BOARD_NAME_MAX_CHARS);
 
 /**
  * Truncate a string to at most NAME_MAX_CHARS Unicode characters (glyphs).
@@ -54,7 +67,7 @@ export const NAME_MAX_BYTES = 96;
  * `name.chars().count() <= NAME_MAX_CHARS` on the Rust side.
  */
 export const limitNameChars = (value: string): string =>
-  Array.from(value).slice(0, NAME_MAX_CHARS).join('');
+  limitChars(value, NAME_MAX_CHARS);
 
 export const createDefaultParameters = (): Parameter[] => {
   return Array.from({ length: PARAM_COUNT }, (_, index) => ({
@@ -68,7 +81,8 @@ export const createDefaultParameters = (): Parameter[] => {
 
 export const createDefaultProject = (): ProjectFile => ({
   projectName: 'default_project',
-  formatVersion: 1,
+  formatVersion: 2,
+  boardName: '默认板卡',
   description: '',
   parameters: createDefaultParameters(),
 });

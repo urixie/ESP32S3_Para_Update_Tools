@@ -2,7 +2,7 @@
 //! workflow — this is NOT the bin file format.
 
 use crate::error::AppError;
-use crate::model::{create_default_parameters, ProjectFile, PARAM_COUNT};
+use crate::model::{create_default_parameters, default_board_name, ProjectFile, PARAM_COUNT};
 use std::path::Path;
 
 /// Save a `ProjectFile` to disk as pretty-printed JSON.
@@ -14,9 +14,9 @@ pub fn save_project_file(path: &Path, project: &ProjectFile) -> Result<(), AppEr
 
 /// Load a `ProjectFile` from a JSON file on disk.
 ///
-/// Serde ignores extra fields by default, so older project files that still
-/// contain productId/keyId can still be opened after the compact-header
-/// simplification.
+/// Serde ignores extra fields by default. `boardName` has a default so older
+/// engineer-side project JSON can still be opened, but exported `.bin` files are
+/// not backward-compatible with the old payload schema.
 pub fn load_project_file(path: &Path) -> Result<ProjectFile, AppError> {
     let text = std::fs::read_to_string(path)?;
     let project: ProjectFile = serde_json::from_str(&text)?;
@@ -27,7 +27,8 @@ pub fn load_project_file(path: &Path) -> Result<ProjectFile, AppError> {
 pub fn default_project() -> ProjectFile {
     ProjectFile {
         project_name: "default_project".to_string(),
-        format_version: 1,
+        format_version: 2,
+        board_name: default_board_name(),
         description: String::new(),
         parameters: create_default_parameters(),
     }
@@ -36,9 +37,7 @@ pub fn default_project() -> ProjectFile {
 /// Re-fill missing addresses 0..PARAM_COUNT-1 with placeholder entries so the
 /// GUI never holds a partial list. Used after loading a file that had a
 /// non-standard shape.
-#[allow(dead_code)] // Reserved for the GUI's "load non-standard project file"
-                   // recovery path; not called yet because the current load
-                   // command refills via `commands::new_project` instead.
+#[allow(dead_code)]
 pub fn normalize_parameters(list: Vec<crate::model::Parameter>) -> Vec<crate::model::Parameter> {
     if list.len() == PARAM_COUNT {
         return list;

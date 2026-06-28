@@ -461,9 +461,42 @@ static const char *kind_label_from_name(const char *name, bool is_dir)
         return "目录";
     }
     if (ends_with_ignore_case(name, ".bin")) {
-        return "加密参数 bin";
+        return "加密板卡 bin";
     }
     return "普通文件";
+}
+
+static bool try_parse_board_name(const char *relative_path, char *board_name, size_t board_name_size)
+{
+    if (board_name == NULL || board_name_size == 0) {
+        return false;
+    }
+    board_name[0] = '\0';
+
+    char full_path[APP_WEB_MAX_PATH];
+    int len = snprintf(full_path, sizeof(full_path), "%s%s", s_mount_point, relative_path);
+    if (len <= 0 || (size_t)len >= sizeof(full_path)) {
+        return false;
+    }
+
+    app_param_bin_result_t *parsed = calloc(1, sizeof(*parsed));
+    if (parsed == NULL) {
+        return false;
+    }
+
+    char parse_error[96] = {0};
+    esp_err_t ret = app_param_bin_parse_file(full_path, parsed, parse_error, sizeof(parse_error));
+    if (ret == ESP_OK && parsed->board_name[0] != '\0') {
+        snprintf(board_name, board_name_size, "%s", parsed->board_name);
+        free(parsed);
+        return true;
+    }
+
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "skip board name for %s: %s", full_path, parse_error);
+    }
+    free(parsed);
+    return false;
 }
 
 static esp_err_t send_file_item(httpd_req_t *req, const char *relative_path, const char *name,
@@ -471,12 +504,23 @@ static esp_err_t send_file_item(httpd_req_t *req, const char *relative_path, con
 {
     bool is_dir = S_ISDIR(st->st_mode);
     bool is_param_bin = !is_dir && ends_with_ignore_case(name, ".bin");
-    char meta[220];
+    char board_name[APP_PARAM_BIN_BOARD_NAME_MAX_BYTES + 1] = {0};
+    const char *display_name = name;
+
+    if (is_param_bin && try_parse_board_name(relative_path, board_name, sizeof(board_name))) {
+        display_name = board_name;
+    }
+
+    char meta[256];
     snprintf(meta, sizeof(meta), "%s{\"name\":\"", *first ? "" : ",");
     httpd_resp_sendstr_chunk(req, meta);
     json_escape_send(req, name);
     httpd_resp_sendstr_chunk(req, "\",\"path\":\"");
     json_escape_send(req, relative_path);
+    httpd_resp_sendstr_chunk(req, "\",\"boardName\":\"");
+    json_escape_send(req, is_param_bin ? board_name : "");
+    httpd_resp_sendstr_chunk(req, "\",\"displayName\":\"");
+    json_escape_send(req, display_name);
     snprintf(meta, sizeof(meta),
              "\",\"size\":%lld,\"is_dir\":%s,\"is_param_bin\":%s,\"kind\":\"%s\",\"kind_label\":\"%s\"}",
              (long long)st->st_size,
@@ -873,30 +917,38 @@ static esp_err_t bin_parse_handler(httpd_req_t *req)
         return send_json_error(req, "400 Bad Request", "只支持解析 .bin 文件");
     }
 
-    app_param_bin_result_t parsed;
+    app_param_bin_result_t *parsed = calloc(1, sizeof(*parsed));
+    if (parsed == NULL) {
+        return send_json_error(req, "500 Internal Server Error", "内存不足");
+    }
+
     char parse_error[160];
     parse_error[0] = '\0';
 
     if (app_storage_lock(portMAX_DELAY) != ESP_OK) {
+        free(parsed);
         return send_json_error(req, "503 Service Unavailable", "文件系统忙");
     }
-    esp_err_t ret = app_param_bin_parse_file(full_path, &parsed, parse_error, sizeof(parse_error));
+    esp_err_t ret = app_param_bin_parse_file(full_path, parsed, parse_error, sizeof(parse_error));
     app_storage_unlock();
 
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "parse failed %s: %s", full_path, parse_error);
+        free(parsed);
         return send_json_error(req, "422 Unprocessable Entity", parse_error[0] != '\0' ? parse_error : "解析失败");
     }
 
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
 
-    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"parameters\":[");
+    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"boardName\":\"");
+    json_escape_send(req, parsed->board_name);
+    httpd_resp_sendstr_chunk(req, "\",\"parameters\":[");
 
     bool first = true;
     size_t visible_count = 0;
     for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
-        const app_param_bin_parameter_t *param = &parsed.parameters[i];
+        const app_param_bin_parameter_t *param = &parsed->parameters[i];
         if (param->permission != APP_PARAM_BIN_PERMISSION_VISIBLE) {
             continue;
         }
@@ -908,6 +960,7 @@ static esp_err_t bin_parse_handler(httpd_req_t *req)
     char tail[64];
     snprintf(tail, sizeof(tail), "],\"visibleCount\":%u}", (unsigned int)visible_count);
     httpd_resp_sendstr_chunk(req, tail);
+    free(parsed);
     return httpd_resp_send_chunk(req, NULL, 0);
 }
 

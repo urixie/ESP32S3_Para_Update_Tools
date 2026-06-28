@@ -7,6 +7,12 @@ pub enum AppError {
     #[error("参数校验失败: {0}")]
     ValidationFailed(String),
 
+    #[error("板卡名称不能为空")]
+    EmptyBoardName,
+
+    #[error("板卡名称 UTF-8 字节长度超过 {max} 字节，实际 {actual}")]
+    BoardNameTooLong { max: usize, actual: usize },
+
     #[error("参数数量必须为 72，实际为 {0}")]
     InvalidParameterCount(usize),
 
@@ -17,24 +23,18 @@ pub enum AppError {
     DuplicateAddress(u8),
 
     #[error("参数地址缺失: {0}")]
-    #[allow(dead_code)] // Reserved for completeness of the error surface; not
-                       // constructed yet because the validator reports the
-                       // full missing-address set via ValidationFailed.
+    #[allow(dead_code)]
     MissingAddress(u8),
 
     #[error("参数名称不能为空: 地址 {0}")]
-    #[allow(dead_code)] // Reserved for completeness of the error surface; not
-                       // constructed yet because the validator currently folds
-                       // empty-name findings into ValidationFailed.
+    #[allow(dead_code)]
     EmptyName(u8),
 
     #[error("参数名称 UTF-8 字节长度超过 {max} 字节: 地址 {address}, 实际 {actual}")]
     NameTooLong { address: u8, max: usize, actual: usize },
 
     #[error("默认值越界: 地址 {0}")]
-    #[allow(dead_code)] // Reserved for completeness of the error surface; not
-                       // constructed yet because the validator folds
-                       // out-of-range default values into ValidationFailed.
+    #[allow(dead_code)]
     InvalidDefaultValue(u8),
 
     #[error("参数类型非法: 地址 {0}")]
@@ -64,6 +64,12 @@ pub enum AppError {
     #[error("Payload record_size 错误: 期望 12, 实际 {0}")]
     InvalidRecordSize(u8),
 
+    #[error("Payload 板卡名称越界")]
+    BoardNameOutOfBounds,
+
+    #[error("Payload 板卡名称 UTF-8 解析失败")]
+    InvalidUtf8BoardName,
+
     #[error("Payload Name Table 越界")]
     NameTableOutOfBounds,
 
@@ -80,8 +86,7 @@ pub enum AppError {
     Json(String),
 
     #[error("未知错误: {0}")]
-    #[allow(dead_code)] // Generic catch-all kept for future use; currently
-                       // every fallible path returns a typed variant.
+    #[allow(dead_code)]
     Unknown(String),
 }
 

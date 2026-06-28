@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #define APP_PARAM_BIN_PARAM_COUNT 72
+#define APP_PARAM_BIN_BOARD_NAME_MAX_BYTES 96
 #define APP_PARAM_BIN_NAME_MAX_BYTES 96
 #define APP_PARAM_BIN_NONCE_HEX_LEN 24
 
@@ -38,6 +39,7 @@ typedef struct {
     uint32_t ciphertext_len;
     uint8_t tag_len;
     uint32_t file_size;
+    char board_name[APP_PARAM_BIN_BOARD_NAME_MAX_BYTES + 1];
     app_param_bin_parameter_t parameters[APP_PARAM_BIN_PARAM_COUNT];
 } app_param_bin_result_t;
 

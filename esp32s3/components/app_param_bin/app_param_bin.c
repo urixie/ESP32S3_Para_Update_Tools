@@ -21,9 +21,9 @@
 #define PARAM_BIN_MAX_FILE_SIZE (128 * 1024)
 
 #define PARAM_BIN_PAYLOAD_MAGIC "UPLD"
-#define PARAM_BIN_PAYLOAD_HEADER_LEN 16
+#define PARAM_BIN_PAYLOAD_HEADER_LEN 20
 #define PARAM_BIN_RECORD_SIZE 12
-#define PARAM_BIN_SCHEMA_VERSION 1
+#define PARAM_BIN_SCHEMA_VERSION 2
 #define PARAM_BIN_ADDR_MAX 71
 
 static const char *TAG = "param_bin";
@@ -203,7 +203,8 @@ static esp_err_t decode_payload(const uint8_t *payload, size_t payload_len,
     uint16_t schema_version = read_le16(payload + 4);
     uint8_t param_count = payload[6];
     uint8_t record_size = payload[7];
-    uint16_t name_table_len = read_le16(payload + 8);
+    uint16_t board_name_len = read_le16(payload + 8);
+    uint16_t name_table_len = read_le16(payload + 10);
 
     if (schema_version != PARAM_BIN_SCHEMA_VERSION) {
         set_err(err_msg, err_msg_size, "Payload schema 版本不支持");
@@ -217,14 +218,22 @@ static esp_err_t decode_payload(const uint8_t *payload, size_t payload_len,
         set_err(err_msg, err_msg_size, "参数记录长度不是 12 字节");
         return ESP_ERR_INVALID_SIZE;
     }
-
-    size_t records_total = (size_t)param_count * record_size;
-    size_t name_table_offset = PARAM_BIN_PAYLOAD_HEADER_LEN + records_total;
-    size_t expected_total = name_table_offset + name_table_len;
-    if (payload_len < expected_total) {
-        set_err(err_msg, err_msg_size, "Payload 名称表不完整");
+    if (board_name_len == 0 || board_name_len > APP_PARAM_BIN_BOARD_NAME_MAX_BYTES) {
+        set_err(err_msg, err_msg_size, "板卡名称为空或超过 ESP32 显示限制");
         return ESP_ERR_INVALID_SIZE;
     }
+
+    size_t records_total = (size_t)param_count * record_size;
+    size_t board_name_offset = PARAM_BIN_PAYLOAD_HEADER_LEN + records_total;
+    size_t name_table_offset = board_name_offset + board_name_len;
+    size_t expected_total = name_table_offset + name_table_len;
+    if (payload_len < expected_total) {
+        set_err(err_msg, err_msg_size, "Payload 板卡名称或名称表不完整");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    memcpy(out->board_name, payload + board_name_offset, board_name_len);
+    out->board_name[board_name_len] = '\0';
 
     bool seen[APP_PARAM_BIN_PARAM_COUNT] = {0};
     const uint8_t *records = payload + PARAM_BIN_PAYLOAD_HEADER_LEN;

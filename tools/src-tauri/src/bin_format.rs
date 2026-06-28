@@ -2,6 +2,7 @@
 //!
 //! The product currently has one product, one customer and one fixed key, so
 //! the bin header only keeps fields that are actually needed by ESP32 parsing.
+//! Board names and parameter names are encrypted inside the payload.
 //!
 //! File layout:
 //!
@@ -33,7 +34,8 @@ use std::io::Write;
 /// File magic, 4 ASCII bytes.
 pub const MAGIC: &[u8; 4] = b"UEPB";
 
-/// Current simplified bin format version.
+/// Current compact bin container format version. The encrypted payload schema is
+/// managed separately by `payload_codec::SCHEMA_VERSION`.
 pub const FORMAT_VERSION: u8 = 1;
 
 /// Compact Header size: 4-byte magic + 1-byte version + 12-byte nonce.
@@ -91,12 +93,12 @@ fn parse_header(header: &[u8], file_size: usize) -> Result<(BinHeaderInfo, [u8; 
     ))
 }
 
-/// Encode parameters into a complete bin file (Header + ciphertext + tag).
+/// Encode board name + parameters into a complete bin file (Header + ciphertext + tag).
 ///
 /// `parameters` is validated here — any failure short-circuits with
 /// `AppError::ValidationFailed`. This makes the function safe to call from any
 /// code path, not just through the Tauri command layer.
-pub fn export_encrypted_bin_bytes(parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
+pub fn export_encrypted_bin_bytes(board_name: &str, parameters: &[Parameter]) -> Result<Vec<u8>, AppError> {
     // 1. Validate first so we never emit a malformed bin file.
     let errors = validate_parameters(parameters);
     if !errors.is_empty() {
@@ -109,7 +111,7 @@ pub fn export_encrypted_bin_bytes(parameters: &[Parameter]) -> Result<Vec<u8>, A
     }
 
     // 2. Build plaintext payload, then a fresh random nonce and compact header.
-    let plaintext = encode_payload(parameters)?;
+    let plaintext = encode_payload(board_name, parameters)?;
     let nonce = generate_nonce();
     let header = build_header(&nonce);
 
@@ -124,7 +126,7 @@ pub fn export_encrypted_bin_bytes(parameters: &[Parameter]) -> Result<Vec<u8>, A
     Ok(out)
 }
 
-/// Parse a complete bin file and return the full result for the GUI.
+/// Parse a complete bin file and return board name + full parameter result for the GUI.
 pub fn parse_encrypted_bin_bytes(data: &[u8]) -> Result<ParsedBinInfo, AppError> {
     if data.len() < HEADER_SIZE + TAG_LEN {
         return Err(AppError::BinTooSmall(HEADER_SIZE + TAG_LEN));
@@ -136,10 +138,11 @@ pub fn parse_encrypted_bin_bytes(data: &[u8]) -> Result<ParsedBinInfo, AppError>
     let (info, nonce) = parse_header(header, data.len())?;
 
     let plaintext = decrypt_payload_with_aad(&PRODUCT_KEY, &nonce, header, body)?;
-    let parameters = decode_payload(&plaintext)?;
+    let (board_name, parameters) = decode_payload(&plaintext)?;
 
     Ok(ParsedBinInfo {
         header: info,
+        board_name,
         parameters,
     })
 }

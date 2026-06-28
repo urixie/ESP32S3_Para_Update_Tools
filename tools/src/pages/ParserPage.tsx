@@ -17,6 +17,7 @@ export const ParserPage: React.FC = () => {
     kind: 'info',
     text: '请选择由本工具生成的加密 bin 文件进行解析。',
   });
+  const [boardName, setBoardName] = useState<string>('');
   const [parameters, setParameters] = useState<Parameter[]>([]);
   const [filePath, setFilePath] = useState<string>('');
   const [busy, setBusy] = useState(false);
@@ -35,13 +36,16 @@ export const ParserPage: React.FC = () => {
       }
 
       setFilePath(path);
+      setBoardName('');
       setParameters([]);
       setStatus({ kind: 'info', text: `正在解析: ${path}` });
 
       const parsed = (await invoke('parse_encrypted_bin_cmd', { path })) as ParsedBinInfo;
+      setBoardName(parsed.boardName || '未命名板卡');
       setParameters(parsed.parameters);
       setStatus(null);
     } catch (e) {
+      setBoardName('');
       setParameters([]);
       setStatus({
         kind: 'error',
@@ -53,6 +57,7 @@ export const ParserPage: React.FC = () => {
   };
 
   const handleClear = () => {
+    setBoardName('');
     setParameters([]);
     setFilePath('');
     setStatus({ kind: 'info', text: '已清空解析结果。' });
@@ -74,6 +79,15 @@ export const ParserPage: React.FC = () => {
             </div>
           </div>
 
+          {boardName && (
+            <div className="side-panel-section">
+              <div className="side-panel-title">板卡名称</div>
+              <div className="file-path-box" title={boardName}>
+                {boardName}
+              </div>
+            </div>
+          )}
+
           {filePath && (
             <div className="side-panel-section">
               <div className="side-panel-title">当前文件</div>
@@ -91,6 +105,8 @@ export const ParserPage: React.FC = () => {
         </aside>
 
         <div className="page-main-panel parser-main-panel">
+          {boardName && <div className="page-title-inline">{boardName}</div>}
+
           {parameters.length > 0 && (
             <div className="param-two-column">
               <ParamTable
