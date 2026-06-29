@@ -4,8 +4,8 @@
 #include <dirent.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -397,7 +397,6 @@ static esp_err_t login_handler(httpd_req_t *req)
     }
 
     web_auth_create_session();
-
     char cookie[128];
     snprintf(cookie, sizeof(cookie), "sid=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=1800", s_session_id);
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
@@ -424,7 +423,6 @@ static esp_err_t auth_status_handler(httpd_req_t *req)
         set_connection_close(req);
         return httpd_resp_sendstr(req, "{\"ok\":true,\"login\":true,\"user\":\"admin\"}");
     }
-
     httpd_resp_set_status(req, "401 Unauthorized");
     set_connection_close(req);
     return httpd_resp_sendstr(req, "{\"ok\":false,\"login\":false}");
@@ -626,12 +624,9 @@ static esp_err_t files_handler(httpd_req_t *req)
     httpd_resp_sendstr_chunk(req, "{\"mount_point\":\"");
     json_escape_send(req, s_mount_point);
     httpd_resp_sendstr_chunk(req, "\",\"files\":[");
-
     bool first = true;
     list_dir_entries(req, "", &first);
-
     app_storage_unlock();
-
     httpd_resp_sendstr_chunk(req, "]}");
     return httpd_resp_send_chunk(req, NULL, 0);
 }
@@ -889,9 +884,7 @@ static esp_err_t delete_handler(httpd_req_t *req)
 static void send_visible_param_json(httpd_req_t *req, const app_param_bin_parameter_t *p, bool first)
 {
     char buf[192];
-    snprintf(buf, sizeof(buf),
-             "%s{\"name\":\"",
-             first ? "" : ",");
+    snprintf(buf, sizeof(buf), "%s{\"name\":\"", first ? "" : ",");
     httpd_resp_sendstr_chunk(req, buf);
     json_escape_send(req, p->name);
     snprintf(buf, sizeof(buf),
@@ -1023,7 +1016,6 @@ static esp_err_t bin_parse_handler(httpd_req_t *req)
 
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
-
     httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"boardName\":\"");
     json_escape_send(req, parsed->board_name);
     httpd_resp_sendstr_chunk(req, "\",\"parameters\":[");
@@ -1182,14 +1174,14 @@ static esp_err_t param_download_handler(httpd_req_t *req)
         return send_json_error(req, "400 Bad Request", err_msg[0] ? err_msg : "参数值无效");
     }
 
-    uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT];
     uint16_t values[APP_PARAM_BIN_PARAM_COUNT];
-    build_param_defaults(parsed, defaults);
-    ret = app_param_board_read(defaults, values, err_msg, sizeof(err_msg));
-    if (ret != ESP_OK) {
-        free(parsed);
-        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "读取板卡当前参数失败");
-    }
+    /*
+     * 参数下载以加密 bin 中的 72 项默认值作为基础镜像：
+     * - 隐藏参数不会从网页提交，保持加密 bin 默认值；
+     * - 可见参数通过网页提交值覆盖对应 address；
+     * - 不再通过回读值保留隐藏参数，避免隐藏参数被旧板卡状态污染。
+     */
+    build_param_defaults(parsed, values);
 
     for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
         if (provided[i]) {
