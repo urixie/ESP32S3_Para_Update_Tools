@@ -157,7 +157,7 @@
               </nav>
               <div class="result-body">
                 <div id="paramEmpty" class="empty hidden">当前分类暂无可见参数</div>
-                <div id="paramTable" class="param-table"><div class="table-inner"><table><thead><tr><th>参数名称</th><th>默认值</th></tr></thead><tbody id="paramRows"></tbody></table></div></div>
+                <div id="paramTable" class="param-table"><div class="table-inner"><table><thead><tr><th>参数名称</th><th>参数值</th><th>单位</th></tr></thead><tbody id="paramRows"></tbody></table></div></div>
               </div>
             </div>
           </div>
@@ -275,8 +275,46 @@ function renderParamTable(){
   $('protectionCount').textContent=protection.length;
   $('tabControl').classList.toggle('active',currentParamType==='control');
   $('tabProtection').classList.toggle('active',currentParamType==='protection');
-  const list=(currentParamType==='control'?control:protection).slice();
-  $('paramRows').innerHTML=list.map(p=>'<tr><td class="name">'+esc(p.name)+'</td><td class="value">'+esc(p.defaultValue)+'</td></tr>').join('');
+
+  const list=parsedParams
+    .map((p,i)=>({p,i}))
+    .filter(x=>normParamType(x.p)===currentParamType);
+
+  $('paramRows').innerHTML=list.map(x=>{
+    const v=x.p.currentValue==null?'':x.p.currentValue;
+    return '<tr>'
+      +'<td class="name">'+esc(x.p.name)+'</td>'
+      +'<td class="value"><input class="param-value-input" type="number" min="0" max="65535" step="1" inputmode="numeric" data-index="'+x.i+'" value="'+esc(v)+'"></td>'
+      +'<td class="value">ns</td>'
+      +'</tr>';
+  }).join('');
+
+  document.querySelectorAll('.param-value-input').forEach(input=>{
+    input.oninput=()=>{
+      const idx=Number(input.dataset.index);
+      if(!parsedParams[idx])return;
+
+      if(input.value===''){
+        delete parsedParams[idx].currentValue;
+        return;
+      }
+
+      let v=Number(input.value);
+      if(!Number.isFinite(v)){
+        delete parsedParams[idx].currentValue;
+        input.value='';
+        return;
+      }
+
+      if(v<0)v=0;
+      if(v>65535)v=65535;
+      v=Math.floor(v);
+
+      parsedParams[idx].currentValue=v;
+      input.value=String(v);
+    };
+  });
+
   $('paramEmpty').classList.toggle('hidden',list.length>0);
   $('paramTable').classList.toggle('hidden',list.length===0);
 }
@@ -315,7 +353,11 @@ async function deleteFileByPath(path){
   setMsg('删除完成',true);loadFiles();
 }
 async function logout(){try{await fetch('/api/logout',{method:'POST'})}catch(e){}location.href='/'}
-function actDefault(){if(!selected)return;}
+function actDefault(){
+  if(!selected||parsedParams.length===0)return;
+  parsedParams.forEach(p=>{p.currentValue=p.defaultValue;});
+  renderParamTable();
+}
 function actReadback(){if(!selected)return;}
 function actDownload(){if(!selected)return;}
 checkAuth();
