@@ -204,7 +204,7 @@
 const $=id=>document.getElementById(id);
 const paramCounts={}; // path -> 已解析得到的参数数量
 const boardParamStates={}; // path -> { parameters: [], currentParamType: 'control', parsed: false }
-let allFiles=[],binFiles=[],selected=null,uploading=false,parsedParams=[],currentParamType='control',currentPage='files';
+let allFiles=[],binFiles=[],selected=null,uploading=false,paramBusy=false,parsedParams=[],currentParamType='control',currentPage='files';
 let toastTimer=null;
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -220,6 +220,22 @@ function showToast(s,duration=1000){
 async function readErr(r){try{const j=await r.clone().json();return j.error||r.statusText}catch(e){return await r.text()||r.statusText}}
 function xhrErrorText(x){try{const j=JSON.parse(x.responseText||'{}');return j.error||x.statusText}catch(e){return x.responseText||x.statusText||'连接失败'}}
 function setBusy(b){uploading=b;$('uploadBtn').disabled=b;$('refreshBtn').disabled=b}
+function setParamBusy(b){
+  paramBusy=b;
+  const disabled=b||!selected;
+  $('btnDefault').disabled=disabled;
+  $('btnReadback').disabled=disabled;
+  $('btnDownload').disabled=disabled;
+}
+async function postForm(url,fields){
+  const body=new URLSearchParams(fields);
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  let j=null;
+  try{j=await r.json();}catch(e){j={ok:false,error:r.statusText};}
+  if(r.status===401){location.href='/';return null;}
+  if(!r.ok||!j.ok)throw new Error((j&&j.error)||r.statusText);
+  return j;
+}
 async function checkAuth(){try{const r=await fetch('/api/auth/status');if(!r.ok){location.href='/';return;}await loadFiles();}catch(e){location.href='/'}}
 function isBin(f){return !f.is_dir&&(f.is_param_bin||/\.bin$/i.test(f.name||''));}
 function boardLabel(f){return f.boardName||f.displayName||'未识别板卡配置'}
@@ -298,9 +314,7 @@ function selectBin(path,parseNow=true){
   if(!selected)return;
   $('title').textContent=boardLabel(selected);
   $('hint').textContent='正在解析板卡配置...';
-  $('btnDefault').disabled=false;
-  $('btnReadback').disabled=false;
-  $('btnDownload').disabled=false;
+  if(!paramBusy)setParamBusy(false);
   const state=getCurrentBoardState();
   if(state&&state.parsed){
     currentParamType=state.currentParamType||'control';
@@ -409,7 +423,7 @@ async function parseSelected(){
   $('parseErr').classList.add('hidden');$('result').classList.add('hidden');
   $('title').textContent=boardLabel(selected);
   $('hint').textContent='ESP32 正在解密并解析...';
-  $('btnDefault').disabled=false;$('btnReadback').disabled=false;$('btnDownload').disabled=false;
+  if(!paramBusy)setParamBusy(false);
   try{
     const r=await fetch('/api/bin/parse?path='+encodeURIComponent(path));
     const j=await r.json();
@@ -420,8 +434,9 @@ async function parseSelected(){
     const state=boardParamStates[path]||{parameters:[],currentParamType:'control',parsed:false};
     const oldParams=state.parameters||[];
     const newParams=(j.parameters||[]).map((p,i)=>{
+      const oldByAddr=oldParams.find(o=>o&&o.address!=null&&p.address!=null&&Number(o.address)===Number(p.address));
       const oldByKey=oldParams.find(o=>o&&o.name===p.name&&normParamType(o)===normParamType(p));
-      const old=oldByKey||oldParams[i];
+      const old=oldByAddr||oldByKey||oldParams[i];
       return old&&old.currentValue!=null?{...p,currentValue:old.currentValue}:{...p};
     });
     state.parameters=newParams;
@@ -469,19 +484,66 @@ function actDefault(){
   renderParamTable();
   showToast('默认参数填充成功');
 }
-function actReadback(){
+async function actReadback(){
   const state=getCurrentBoardState();
   if(!selected||!state)return;
   const path=selected.path;
-  const params=state.parameters;
-  void path;void params;
+  try{
+    setParamBusy(true);
+    showToast('正在回读参数...',1200);
+    const j=await postForm('/api/param/readback',{path});
+    if(!j)return;
+    if(!(selected&&selected.path===path))return;
+    const valueMap={};
+    (j.values||[]).forEach(item=>{valueMap[Number(item.address)]=item.value;});
+    state.parameters.forEach(p=>{
+      const addr=Number(p.address);
+      if(Object.prototype.hasOwnProperty.call(valueMap,addr)){
+        p.currentValue=valueMap[addr];
+      }
+    });
+    renderParamTable();
+    showToast('参数回读成功');
+  }catch(e){
+    showToast('参数回读失败：'+e.message,1800);
+  }finally{
+    setParamBusy(false);
+  }
 }
-function actDownload(){
+async function actDownload(){
   const state=getCurrentBoardState();
   if(!selected||!state)return;
   const path=selected.path;
   const params=state.parameters;
-  void path;void params;
+  const pairs=[];
+  for(const p of params){
+    const addr=Number(p.address);
+    if(!Number.isInteger(addr)||addr<0||addr>71){
+      showToast('参数地址无效',1800);
+      return;
+    }
+    if(p.currentValue==null||p.currentValue===''){
+      showToast('请先填写所有可见参数',1800);
+      return;
+    }
+    let v=Number(p.currentValue);
+    if(!Number.isFinite(v)||v<0||v>65535){
+      showToast('参数值必须在 0~65535',1800);
+      return;
+    }
+    pairs.push(addr+':'+Math.floor(v));
+  }
+  try{
+    setParamBusy(true);
+    showToast('正在下载参数...',1200);
+    const j=await postForm('/api/param/download',{path,values:pairs.join(',')});
+    if(!j)return;
+    showToast('参数下载成功');
+  }catch(e){
+    showToast('参数下载失败：'+e.message,1800);
+  }finally{
+    setParamBusy(false);
+  }
 }
 checkAuth();
 </script>

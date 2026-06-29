@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "app_param_bin.h"
+#include "app_param_board.h"
 #include "app_storage_lock.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -25,6 +26,7 @@
 #define APP_WEB_MAX_PATH 320
 #define APP_WEB_IO_BUF_SIZE 2048
 #define APP_WEB_UPLOAD_BUF_SIZE 4096
+#define APP_WEB_PARAM_FORM_BUF_SIZE 1536
 #define WEB_AUTH_USER "admin"
 #define WEB_AUTH_PASS "admin"
 #define WEB_AUTH_SESSION_BYTES 32
@@ -893,11 +895,92 @@ static void send_visible_param_json(httpd_req_t *req, const app_param_bin_parame
     httpd_resp_sendstr_chunk(req, buf);
     json_escape_send(req, p->name);
     snprintf(buf, sizeof(buf),
-             "\",\"defaultValue\":%u,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\"}",
+             "\",\"address\":%u,\"defaultValue\":%u,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\"}",
+             p->address,
              p->default_value,
              app_param_bin_type_name(p->param_type),
              app_param_bin_type_label(p->param_type));
     httpd_resp_sendstr_chunk(req, buf);
+}
+
+static void build_param_defaults(const app_param_bin_result_t *parsed, uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT])
+{
+    memset(defaults, 0, sizeof(uint16_t) * APP_PARAM_BIN_PARAM_COUNT);
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        const app_param_bin_parameter_t *p = &parsed->parameters[i];
+        if (p->address < APP_PARAM_BIN_PARAM_COUNT) {
+            defaults[p->address] = p->default_value;
+        }
+    }
+}
+
+static bool param_address_is_visible(const app_param_bin_result_t *parsed, uint8_t address)
+{
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        const app_param_bin_parameter_t *p = &parsed->parameters[i];
+        if (p->address == address) {
+            return p->permission == APP_PARAM_BIN_PERMISSION_VISIBLE;
+        }
+    }
+    return false;
+}
+
+static esp_err_t parse_param_values(const char *text,
+                                    const app_param_bin_result_t *parsed,
+                                    bool provided[APP_PARAM_BIN_PARAM_COUNT],
+                                    uint16_t values[APP_PARAM_BIN_PARAM_COUNT],
+                                    char *err_msg,
+                                    size_t err_msg_size)
+{
+    if (text == NULL || text[0] == '\0') {
+        snprintf(err_msg, err_msg_size, "缺少参数值");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    char buf[1024];
+    int len = snprintf(buf, sizeof(buf), "%s", text);
+    if (len <= 0 || (size_t)len >= sizeof(buf)) {
+        snprintf(err_msg, err_msg_size, "参数值过长");
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    char *saveptr = NULL;
+    char *token = strtok_r(buf, ",", &saveptr);
+    while (token != NULL) {
+        char *sep = strchr(token, ':');
+        if (sep == NULL) {
+            snprintf(err_msg, err_msg_size, "参数格式错误");
+            return ESP_ERR_INVALID_ARG;
+        }
+        *sep = '\0';
+        char *end = NULL;
+        unsigned long addr = strtoul(token, &end, 10);
+        if (end == token || *end != '\0' || addr >= APP_PARAM_BIN_PARAM_COUNT) {
+            snprintf(err_msg, err_msg_size, "参数地址无效");
+            return ESP_ERR_INVALID_ARG;
+        }
+        unsigned long value = strtoul(sep + 1, &end, 10);
+        if (end == sep + 1 || *end != '\0' || value > 65535UL) {
+            snprintf(err_msg, err_msg_size, "参数值无效");
+            return ESP_ERR_INVALID_ARG;
+        }
+        if (!param_address_is_visible(parsed, (uint8_t)addr)) {
+            snprintf(err_msg, err_msg_size, "参数地址未授权");
+            return ESP_ERR_INVALID_ARG;
+        }
+        provided[addr] = true;
+        values[addr] = (uint16_t)value;
+        token = strtok_r(NULL, ",", &saveptr);
+    }
+
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        const app_param_bin_parameter_t *p = &parsed->parameters[i];
+        if (p->permission == APP_PARAM_BIN_PERMISSION_VISIBLE && !provided[p->address]) {
+            snprintf(err_msg, err_msg_size, "存在未填写的可见参数");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+    return ESP_OK;
 }
 
 static esp_err_t bin_parse_handler(httpd_req_t *req)
@@ -964,6 +1047,167 @@ static esp_err_t bin_parse_handler(httpd_req_t *req)
     return httpd_resp_send_chunk(req, NULL, 0);
 }
 
+static esp_err_t load_parsed_bin(const char *encoded_path,
+                                 app_param_bin_result_t **out,
+                                 char *err_msg,
+                                 size_t err_msg_size)
+{
+    char full_path[APP_WEB_MAX_PATH];
+    if (build_storage_path(encoded_path, false, full_path, sizeof(full_path)) != ESP_OK) {
+        snprintf(err_msg, err_msg_size, "路径无效");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!ends_with_ignore_case(full_path, ".bin")) {
+        snprintf(err_msg, err_msg_size, "只支持 .bin 板卡配置");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    app_param_bin_result_t *parsed = calloc(1, sizeof(*parsed));
+    if (parsed == NULL) {
+        snprintf(err_msg, err_msg_size, "内存不足");
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (app_storage_lock(portMAX_DELAY) != ESP_OK) {
+        free(parsed);
+        snprintf(err_msg, err_msg_size, "文件系统忙");
+        return ESP_ERR_TIMEOUT;
+    }
+    esp_err_t ret = app_param_bin_parse_file(full_path, parsed, err_msg, err_msg_size);
+    app_storage_unlock();
+    if (ret != ESP_OK) {
+        free(parsed);
+        return ret;
+    }
+
+    *out = parsed;
+    return ESP_OK;
+}
+
+static void send_visible_values_json(httpd_req_t *req,
+                                     const app_param_bin_result_t *parsed,
+                                     const uint16_t values[APP_PARAM_BIN_PARAM_COUNT])
+{
+    httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_connection_close(req);
+    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"values\":[");
+    bool first = true;
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        const app_param_bin_parameter_t *p = &parsed->parameters[i];
+        if (p->permission != APP_PARAM_BIN_PERMISSION_VISIBLE) {
+            continue;
+        }
+        char item[64];
+        snprintf(item, sizeof(item), "%s{\"address\":%u,\"value\":%u}",
+                 first ? "" : ",", p->address, values[p->address]);
+        httpd_resp_sendstr_chunk(req, item);
+        first = false;
+    }
+    httpd_resp_sendstr_chunk(req, "]}");
+    httpd_resp_send_chunk(req, NULL, 0);
+}
+
+static esp_err_t param_readback_handler(httpd_req_t *req)
+{
+    if (!web_auth_is_logged_in(req)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+
+    char body[APP_WEB_PARAM_FORM_BUF_SIZE];
+    if (read_form_body(req, body, sizeof(body)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少请求内容");
+    }
+
+    char encoded_path[APP_WEB_MAX_PATH] = {0};
+    if (httpd_query_key_value(body, "path", encoded_path, sizeof(encoded_path)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少文件路径");
+    }
+
+    char err_msg[160] = {0};
+    app_param_bin_result_t *parsed = NULL;
+    esp_err_t ret = load_parsed_bin(encoded_path, &parsed, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        return send_json_error(req, ret == ESP_ERR_INVALID_ARG ? "400 Bad Request" : "422 Unprocessable Entity",
+                               err_msg[0] ? err_msg : "解析板卡配置失败");
+    }
+
+    uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT];
+    uint16_t values[APP_PARAM_BIN_PARAM_COUNT];
+    build_param_defaults(parsed, defaults);
+    ret = app_param_board_read(defaults, values, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        free(parsed);
+        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "参数回读失败");
+    }
+
+    send_visible_values_json(req, parsed, values);
+    free(parsed);
+    return ESP_OK;
+}
+
+static esp_err_t param_download_handler(httpd_req_t *req)
+{
+    if (!web_auth_is_logged_in(req)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+
+    char body[APP_WEB_PARAM_FORM_BUF_SIZE];
+    if (read_form_body(req, body, sizeof(body)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少请求内容");
+    }
+
+    char encoded_path[APP_WEB_MAX_PATH] = {0};
+    if (httpd_query_key_value(body, "path", encoded_path, sizeof(encoded_path)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少文件路径");
+    }
+
+    char values_text[1024] = {0};
+    if (get_form_value_decoded(body, "values", values_text, sizeof(values_text)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少参数值");
+    }
+
+    char err_msg[160] = {0};
+    app_param_bin_result_t *parsed = NULL;
+    esp_err_t ret = load_parsed_bin(encoded_path, &parsed, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        return send_json_error(req, ret == ESP_ERR_INVALID_ARG ? "400 Bad Request" : "422 Unprocessable Entity",
+                               err_msg[0] ? err_msg : "解析板卡配置失败");
+    }
+
+    bool provided[APP_PARAM_BIN_PARAM_COUNT] = {0};
+    uint16_t submitted[APP_PARAM_BIN_PARAM_COUNT] = {0};
+    ret = parse_param_values(values_text, parsed, provided, submitted, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        free(parsed);
+        return send_json_error(req, "400 Bad Request", err_msg[0] ? err_msg : "参数值无效");
+    }
+
+    uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT];
+    uint16_t values[APP_PARAM_BIN_PARAM_COUNT];
+    build_param_defaults(parsed, defaults);
+    ret = app_param_board_read(defaults, values, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        free(parsed);
+        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "读取板卡当前参数失败");
+    }
+
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        if (provided[i]) {
+            values[i] = submitted[i];
+        }
+    }
+
+    ret = app_param_board_write(values, err_msg, sizeof(err_msg));
+    free(parsed);
+    if (ret != ESP_OK) {
+        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "参数下载失败");
+    }
+
+    httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_connection_close(req);
+    return httpd_resp_sendstr(req, "{\"ok\":true}");
+}
+
 esp_err_t app_web_file_server_start(const char *mount_point)
 {
     ESP_RETURN_ON_FALSE(mount_point != NULL && mount_point[0] == '/', ESP_ERR_INVALID_ARG,
@@ -983,7 +1227,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     config.server_port = 80;
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 12288;
-    config.max_uri_handlers = 12;
+    config.max_uri_handlers = 14;
     config.max_open_sockets = 4;
     config.lru_purge_enable = true;
     config.recv_wait_timeout = 60;
@@ -1006,6 +1250,8 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     const httpd_uri_t upload_uri = {.uri = "/upload", .method = HTTP_POST, .handler = upload_handler};
     const httpd_uri_t delete_uri = {.uri = "/delete", .method = HTTP_POST, .handler = delete_handler};
     const httpd_uri_t bin_parse_uri = {.uri = "/api/bin/parse", .method = HTTP_GET, .handler = bin_parse_handler};
+    const httpd_uri_t param_readback_uri = {.uri = "/api/param/readback", .method = HTTP_POST, .handler = param_readback_handler};
+    const httpd_uri_t param_download_uri = {.uri = "/api/param/download", .method = HTTP_POST, .handler = param_download_handler};
 
     esp_err_t ret = httpd_register_uri_handler(s_server, &index_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register / failed");
@@ -1029,6 +1275,10 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /delete failed");
     ret = httpd_register_uri_handler(s_server, &bin_parse_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/bin/parse failed");
+    ret = httpd_register_uri_handler(s_server, &param_readback_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/readback failed");
+    ret = httpd_register_uri_handler(s_server, &param_download_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/download failed");
 
     ESP_LOGI(TAG, "HTTP parameter bin server started at mount point %s", s_mount_point);
     return ESP_OK;

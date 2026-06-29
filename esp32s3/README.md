@@ -15,6 +15,8 @@
 | 接口 | 方法 | 说明 |
 | --- | --- | --- |
 | `/api/bin/parse?path=/xxx.bin` | GET | 解析指定加密参数 bin，返回 header 与 72 个参数 |
+| `/api/param/readback` | POST | 使用 GPIO4/GPIO5 UART 从当前板卡回读 72 个参数，并返回当前 bin 的可见参数值 |
+| `/api/param/download` | POST | 将当前 bin 的可见参数值合并到 72 参数数组后，通过 GPIO4/GPIO5 UART 写入板卡 |
 | `/files` | GET | 文件列表中新增 `is_param_bin`、`kind`、`kind_label` 字段 |
 
 ## bin 解密兼容性
@@ -30,6 +32,10 @@ Payload = "UPLD" + schema + 72 条参数记录 + UTF-8 名称表
 ```
 
 量产前请将 `components/app_param_bin/app_param_bin.c` 中的 `s_product_key` 替换为正式 32 字节随机密钥，并确保 tools 端同步替换。
+
+## 参数板卡串口
+
+参数回读和参数下载使用 `components/app_param_board/` 中的 UART 协议实现，默认连接为 `UART1 TX=GPIO4`、`UART1 RX=GPIO5`、`921600 8N1`。协议沿用板卡 82 字节帧格式，72 个 `uint16_t` 参数分两帧读写。
 
 ## 构建
 
