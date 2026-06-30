@@ -1,6 +1,6 @@
-# Param Bin 文件协议 (ESP32 端实现参考)
+# UniEdge驱动器加密参数配置工具文件协议 (ESP32 端实现参考)
 
-> 本文档描述由 Param Bin Tool 生成的 `.bin` 文件的二进制格式，供 ESP32
+> 本文档描述由 UniEdge驱动器加密参数配置工具 生成的 `.bin` 文件的二进制格式，供 ESP32
 > 端 C 代码解析使用。协议固定、小端、长度固定，适合嵌入式环境直接 memcmp
 > + memcpy。
 

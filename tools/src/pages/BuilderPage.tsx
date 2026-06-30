@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { save as saveDialog, open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
@@ -17,11 +17,32 @@ interface StatusMessage {
   text: string;
 }
 
-export const BuilderPage: React.FC = () => {
-  const [project, setProject] = useState<ProjectFile>(createDefaultProject());
+interface BuilderPageProps {
+  project: ProjectFile;
+  setProject: Dispatch<SetStateAction<ProjectFile>>;
+  importedNotice?: string | null;
+  onImportedNoticeShown?: () => void;
+}
+
+export const BuilderPage: React.FC<BuilderPageProps> = ({
+  project,
+  setProject,
+  importedNotice,
+  onImportedNoticeShown,
+}) => {
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!importedNotice) {
+      return;
+    }
+
+    setValidationErrors([]);
+    setStatus({ kind: 'success', text: importedNotice });
+    onImportedNoticeShown?.();
+  }, [importedNotice, onImportedNoticeShown]);
 
   const handleParamChange = (index: number, data: Partial<Parameter>) => {
     setProject((prev) => {

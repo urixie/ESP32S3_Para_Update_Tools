@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul
 
 echo ========================================
-echo Param Bin Tool - Release EXE Builder
+echo UniEdge Release EXE Builder
 echo ========================================
 
 REM Optional:
@@ -155,7 +155,6 @@ if not exist release (
 )
 
 set "EXE_SRC=%PROJECT_DIR%\src-tauri\target\release\param_bin_tool.exe"
-set "EXE_DST=%PROJECT_DIR%\release\ParamBinTool.exe"
 
 if not exist "%EXE_SRC%" (
     echo [ERROR] Expected exe not found: %EXE_SRC%
@@ -164,68 +163,19 @@ if not exist "%EXE_SRC%" (
     exit /b 1
 )
 
-REM If a previous build is still running, the destination file is locked by
-REM the OS and `copy /Y` fails with "The process cannot access the file
-REM because it is being used by another process." Kill any running instance
-REM first, then retry the copy a few times in case the handle takes a moment
-REM to release.
-echo Closing any running ParamBinTool.exe instances...
-taskkill /F /IM ParamBinTool.exe >nul 2>nul
-
-REM Give Windows a brief moment to release the file lock. Use `ping` to
-REM sleep because `timeout` is shadowed by Git Bash's POSIX `timeout`
-REM when this script is invoked through bash, which would print a
-REM "invalid time interval" error and abort the retry loop.
-ping -n 2 127.0.0.1 >nul
-
-set "COPY_ATTEMPTS=0"
-:copy_retry
-set /a COPY_ATTEMPTS+=1
-copy /Y "%EXE_SRC%" "%EXE_DST%" >nul
-if not errorlevel 1 goto copy_done
-
-if %COPY_ATTEMPTS% GEQ 5 (
-    echo [ERROR] Failed to copy exe after %COPY_ATTEMPTS% attempts.
-    echo The destination file may still be locked. Close any running
-    echo ParamBinTool.exe / Explorer window and retry.
+echo.
+echo [7/8] Finalizing portable release...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PROJECT_DIR%\release\finalize_release.ps1" -ProjectDir "%PROJECT_DIR%" -ExeSrc "%EXE_SRC%"
+if errorlevel 1 (
+    echo [ERROR] Release finalization failed.
     pause
     exit /b 1
 )
 
-echo Copy attempt %COPY_ATTEMPTS% failed, retrying in 1s...
-ping -n 2 127.0.0.1 >nul
-goto copy_retry
-
-:copy_done
-
-echo.
-echo [7/8] Writing release README...
-(
-echo Param Bin Tool
-echo ==============
-echo.
-echo This is a portable Windows executable build.
-echo.
-echo Usage:
-echo   Double-click ParamBinTool.exe to run.
-echo.
-echo Notes:
-echo   1. This tool is used to build and parse encrypted ESP32 parameter bin files.
-echo   2. The generated bin file uses AES-256-GCM encryption.
-echo   3. Chinese parameter names are stored in encrypted payload and should not appear as plaintext in the bin file.
-echo   4. This is not an installer. It is a directly runnable exe.
-echo   5. Windows WebView2 Runtime may be required on older Windows systems.
-echo   6. Fixed 72 parameters, addresses 0~71, simplified 17-byte Header + AES-GCM Payload.
-echo.
-echo For ESP32 firmware integration, see docs/bin_protocol.md.
-echo.
-) > "%PROJECT_DIR%\release\README.txt"
-
 echo.
 echo [8/8] Done.
 echo ========================================
-echo Release exe generated:
-echo %~dp0ParamBinTool.exe
+echo Release finalization complete.
 echo ========================================
 echo.
 

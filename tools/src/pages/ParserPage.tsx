@@ -12,7 +12,11 @@ interface StatusMessage {
   text: string;
 }
 
-export const ParserPage: React.FC = () => {
+interface ParserPageProps {
+  onReuseToBuilder: (boardName: string, parameters: Parameter[]) => void;
+}
+
+export const ParserPage: React.FC<ParserPageProps> = ({ onReuseToBuilder }) => {
   const [status, setStatus] = useState<StatusMessage | null>({
     kind: 'info',
     text: '请选择由本工具生成的加密 bin 文件进行解析。',
@@ -63,6 +67,14 @@ export const ParserPage: React.FC = () => {
     setStatus({ kind: 'info', text: '已清空解析结果。' });
   };
 
+  const handleReuseToBuilder = () => {
+    if (!boardName || parameters.length === 0) {
+      return;
+    }
+
+    onReuseToBuilder(boardName, parameters);
+  };
+
   return (
     <section className="panel page-panel parser-panel">
       <div className="page-workspace">
@@ -78,6 +90,21 @@ export const ParserPage: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {parameters.length > 0 && (
+            <div className="side-panel-section action-section reuse-action-section">
+              <div className="side-panel-title">复用结果</div>
+              <div className="side-action-list">
+                <button
+                  className="primary primary-main"
+                  onClick={handleReuseToBuilder}
+                  disabled={busy}
+                >
+                  复用到参数配置
+                </button>
+              </div>
+            </div>
+          )}
 
           {boardName && (
             <div className="side-panel-section">

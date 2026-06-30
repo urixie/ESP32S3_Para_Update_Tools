@@ -1,14 +1,14 @@
 {
-  "productName": "Param Bin Tool",
+  "productName": "UniEdge驱动器加密参数配置工具",
   "version": "0.1.0",
-  "identifier": "com.example.parambintool",
+  "identifier": "com.uniedge.driverparamtool",
   "build": {
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
-        "title": "Param Bin Tool",
+        "title": "UniEdge驱动器加密参数配置工具",
         "width": 1280,
         "height": 860,
         "resizable": true
@@ -19,6 +19,9 @@
     }
   },
   "bundle": {
-    "active": false
+    "active": false,
+    "icon": [
+      "icons/icon.ico"
+    ]
   }
 }

@@ -1,10 +1,10 @@
-Param Bin Tool
-==============
+﻿UniEdge驱动器加密参数配置工具
+================================
 
 This is a portable Windows executable build.
 
 Usage:
-  Double-click ParamBinTool.exe to run.
+  Double-click UniEdge驱动器加密参数配置工具.exe to run.
 
 Notes:
   1. This tool is used to build and parse encrypted ESP32 parameter bin files.

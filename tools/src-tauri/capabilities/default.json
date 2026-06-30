@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default permissions for the Param Bin Tool",
+  "description": "Default permissions for UniEdge驱动器加密参数配置工具",
   "windows": ["main"],
   "permissions": [
     "core:default",

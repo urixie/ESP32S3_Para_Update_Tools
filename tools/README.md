@@ -1,8 +1,8 @@
-# Param Bin Tool
+# UniEdge驱动器加密参数配置工具
 
 ## 1. 项目概述
 
-Param Bin Tool 是一个基于 **Tauri + Rust + React + TypeScript** 的 ESP32 参数加密 bin 上位机。
+UniEdge驱动器加密参数配置工具 是一个基于 **Tauri + Rust + React + TypeScript** 的 ESP32 参数加密 bin 上位机。
 
 工具用于编辑固定 72 个参数，并生成 ESP32 端可解析的加密 `.bin` 文件。加密文件中，参数中文名称、默认值、类型和权限全部位于 AES-256-GCM 加密 Payload 内，第三方工具无法直接解析出明文内容。
 

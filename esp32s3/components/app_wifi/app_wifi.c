@@ -11,8 +11,8 @@
 #include "freertos/event_groups.h"
 #include "nvs_flash.h"
 
-#define APP_WIFI_SSID "xyj-iPhone17"
-#define APP_WIFI_PASSWORD "12345678"
+#define APP_WIFI_SSID "UniEdge2022"
+#define APP_WIFI_PASSWORD "uniedgehome"
 #define APP_WIFI_CONNECTED_BIT BIT0
 
 // 退避重连：避免紧贴断开重连导致状态机抖动 / 触发 AP 端限流
