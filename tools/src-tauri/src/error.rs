@@ -10,6 +10,9 @@ pub enum AppError {
     #[error("板卡名称不能为空")]
     EmptyBoardName,
 
+    #[error("板卡名称字符数超过 {max} 个，实际 {actual}")]
+    BoardNameCharsTooLong { max: usize, actual: usize },
+
     #[error("板卡名称 UTF-8 字节长度超过 {max} 字节，实际 {actual}")]
     BoardNameTooLong { max: usize, actual: usize },
 

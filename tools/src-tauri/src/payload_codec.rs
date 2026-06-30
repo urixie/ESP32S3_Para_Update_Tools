@@ -16,7 +16,8 @@
 
 use crate::error::AppError;
 use crate::model::{
-    Parameter, ParamPermission, ParamType, ADDR_MAX, ADDR_MIN, BOARD_NAME_MAX_BYTES, PARAM_COUNT,
+    Parameter, ParamPermission, ParamType, ADDR_MAX, ADDR_MIN, BOARD_NAME_MAX_BYTES,
+    BOARD_NAME_MAX_CHARS, PARAM_COUNT,
 };
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::io::{Cursor, Read, Write};
@@ -35,6 +36,13 @@ fn validate_board_name(board_name: &str) -> Result<&str, AppError> {
     let trimmed = board_name.trim();
     if trimmed.is_empty() {
         return Err(AppError::EmptyBoardName);
+    }
+    let char_count = trimmed.chars().count();
+    if char_count > BOARD_NAME_MAX_CHARS {
+        return Err(AppError::BoardNameCharsTooLong {
+            max: BOARD_NAME_MAX_CHARS,
+            actual: char_count,
+        });
     }
     let actual = trimmed.as_bytes().len();
     if actual > BOARD_NAME_MAX_BYTES {

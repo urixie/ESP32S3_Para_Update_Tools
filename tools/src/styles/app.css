@@ -167,6 +167,11 @@ button {
   padding-top: 0.62rem;
 }
 
+.firmware-section {
+  border-top: 1px solid var(--border-muted);
+  padding-top: 0.62rem;
+}
+
 .side-panel-title {
   font-size: 0.76rem;
   font-weight: 800;

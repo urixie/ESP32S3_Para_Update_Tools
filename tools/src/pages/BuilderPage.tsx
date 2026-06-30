@@ -177,6 +177,19 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({
               />
             </label>
             <label className="side-field">
+              <span>说明</span>
+              <textarea
+                value={project.description}
+                onChange={(e) => handleMetaChange('description', e.target.value)}
+                placeholder="工程描述（可选）"
+                rows={5}
+              />
+            </label>
+          </div>
+
+          <div className="side-panel-section firmware-section">
+            <div className="side-panel-title">写入固件信息</div>
+            <label className="side-field">
               <span>板卡名称</span>
               <input
                 value={project.boardName}
@@ -184,15 +197,6 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({
                 onChange={(e) => handleMetaChange('boardName', limitBoardNameChars(e.target.value))}
                 placeholder="请输入中文板卡名称"
                 title={`最多 ${BOARD_NAME_MAX_CHARS} 个字符，写入加密 bin Payload`}
-              />
-            </label>
-            <label className="side-field">
-              <span>说明</span>
-              <textarea
-                value={project.description}
-                onChange={(e) => handleMetaChange('description', e.target.value)}
-                placeholder="工程描述（可选）"
-                rows={5}
               />
             </label>
           </div>

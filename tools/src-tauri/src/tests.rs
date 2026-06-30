@@ -211,6 +211,17 @@ fn export_directly_rejects_empty_board_name() {
 }
 
 #[test]
+fn export_directly_rejects_long_board_name() {
+    let params = build_sample();
+    let board_name = "板".repeat(crate::model::BOARD_NAME_MAX_CHARS + 1);
+    let result = export_encrypted_bin_bytes(&board_name, &params);
+    assert!(
+        result.is_err(),
+        "board names longer than 32 chars must be rejected"
+    );
+}
+
+#[test]
 fn export_directly_rejects_missing_address() {
     let mut params = build_sample();
     params.remove(20);
