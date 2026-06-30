@@ -1,0 +1,4 @@
+interface:
+  display_name: "ESP32-S3 Param Bin Tool"
+  short_description: "Project rules for the Tauri encrypted parameter bin tool"
+  default_prompt: "Use $esp32s3-param-bin-tool when changing this ESP32-S3 encrypted parameter bin desktop tool."
