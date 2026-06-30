@@ -679,10 +679,6 @@ function openBoardConnectDialog(actionText){
 function closeBoardConnectDialog(){
   $('connectDialog').classList.add('hidden');
 }
-function isBoardConnectError(e){
-  const msg=String(e&&e.message?e.message:'');
-  return msg.includes('连接参数板卡失败')||msg.includes('已取消连接参数板卡');
-}
 function cancelBoardConnect(){
   boardConnectCanceled=true;
   closeBoardConnectDialog();
@@ -691,19 +687,39 @@ function cancelBoardConnect(){
     fetch('/api/param/connect/cancel',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'',keepalive:true}).catch(()=>{});
   }catch(e){}
 }
+function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+async function getParamBoardStatus(opId,path){
+  let url='/api/param/status?id='+encodeURIComponent(opId);
+  if(path)url+='&path='+encodeURIComponent(path);
+  const r=await fetch(url,{cache:'no-store'});
+  let j=null;
+  try{j=await r.json();}catch(e){j={ok:false,error:r.statusText};}
+  if(r.status===401){location.href='/';return null;}
+  if(!r.ok||!j.ok)throw new Error((j&&j.error)||r.statusText);
+  return j;
+}
 async function runParamBoardOperation(actionText,url,fields){
   boardConnectCanceled=false;
   openBoardConnectDialog(actionText);
   try{
+    const started=await postForm(url,fields);
+    if(!started||!started.opId)return started;
+    const opId=started.opId;
     while(!boardConnectCanceled){
-      try{
-        const result=await postForm(url,fields);
-        return boardConnectCanceled?null:result;
-      }catch(e){
-        if(boardConnectCanceled)return null;
-        if(!isBoardConnectError(e))throw e;
-        $('connectAction').textContent='板卡未连接，正在继续握手';
-        await new Promise(resolve=>setTimeout(resolve,150));
+      const status=await getParamBoardStatus(opId,fields&&fields.path);
+      if(!status)return null;
+      if(boardConnectCanceled)return null;
+      if(status.message)$('connectAction').textContent=status.message;
+      if(status.state==='done')return status;
+      if(status.state==='canceled')return null;
+      if(status.state==='failed')throw new Error(status.error||status.message||'参数板卡操作失败');
+      if(status.state!=='running')throw new Error(status.error||status.message||'参数板卡状态异常');
+      await sleep(150);
+      if(boardConnectCanceled){
+        try{
+          await fetch('/api/param/connect/cancel',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'',keepalive:true});
+        }catch(e){}
+        return null;
       }
     }
     return null;

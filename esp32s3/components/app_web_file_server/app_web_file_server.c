@@ -1076,27 +1076,87 @@ static esp_err_t load_parsed_bin(const char *encoded_path,
     return ESP_OK;
 }
 
-static void send_visible_values_json(httpd_req_t *req,
-                                     const app_param_bin_result_t *parsed,
-                                     const uint16_t values[APP_PARAM_BIN_PARAM_COUNT])
+static const char *param_board_state_name(app_param_board_op_state_t state)
 {
+    switch (state) {
+    case APP_PARAM_BOARD_OP_IDLE:
+        return "idle";
+    case APP_PARAM_BOARD_OP_RUNNING:
+        return "running";
+    case APP_PARAM_BOARD_OP_DONE:
+        return "done";
+    case APP_PARAM_BOARD_OP_FAILED:
+        return "failed";
+    case APP_PARAM_BOARD_OP_CANCELED:
+        return "canceled";
+    default:
+        return "unknown";
+    }
+}
+
+static const char *param_board_kind_name(app_param_board_op_kind_t kind)
+{
+    switch (kind) {
+    case APP_PARAM_BOARD_OP_KIND_READ:
+        return "read";
+    case APP_PARAM_BOARD_OP_KIND_WRITE:
+        return "write";
+    case APP_PARAM_BOARD_OP_KIND_NONE:
+    default:
+        return "none";
+    }
+}
+
+static esp_err_t send_param_board_started_json(httpd_req_t *req, uint32_t op_id)
+{
+    char buf[96];
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
-    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"values\":[");
-    bool first = true;
-    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
-        const app_param_bin_parameter_t *p = &parsed->parameters[i];
-        if (p->permission != APP_PARAM_BIN_PERMISSION_VISIBLE) {
-            continue;
-        }
-        char item[64];
-        snprintf(item, sizeof(item), "%s{\"address\":%u,\"value\":%u}",
-                 first ? "" : ",", p->address, values[p->address]);
-        httpd_resp_sendstr_chunk(req, item);
-        first = false;
+    snprintf(buf, sizeof(buf), "{\"ok\":true,\"opId\":%lu,\"state\":\"running\"}", (unsigned long)op_id);
+    return httpd_resp_sendstr(req, buf);
+}
+
+static esp_err_t send_param_board_status_json(httpd_req_t *req,
+                                              const app_param_board_status_t *status,
+                                              const app_param_bin_result_t *parsed)
+{
+    char buf[128];
+
+    httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_connection_close(req);
+    snprintf(buf, sizeof(buf), "{\"ok\":true,\"opId\":%lu,\"state\":\"%s\",\"kind\":\"%s\",\"message\":\"",
+             (unsigned long)status->id,
+             param_board_state_name(status->state),
+             param_board_kind_name(status->kind));
+    httpd_resp_sendstr_chunk(req, buf);
+    json_escape_send(req, status->message);
+    httpd_resp_sendstr_chunk(req, "\"");
+
+    if (status->state == APP_PARAM_BOARD_OP_FAILED || status->state == APP_PARAM_BOARD_OP_CANCELED) {
+        httpd_resp_sendstr_chunk(req, ",\"error\":\"");
+        json_escape_send(req, status->message);
+        httpd_resp_sendstr_chunk(req, "\"");
     }
-    httpd_resp_sendstr_chunk(req, "]}");
-    httpd_resp_send_chunk(req, NULL, 0);
+
+    if (status->has_values && parsed != NULL) {
+        httpd_resp_sendstr_chunk(req, ",\"values\":[");
+        bool first = true;
+        for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+            const app_param_bin_parameter_t *p = &parsed->parameters[i];
+            if (p->permission != APP_PARAM_BIN_PERMISSION_VISIBLE || p->address >= APP_PARAM_BOARD_PARAM_COUNT) {
+                continue;
+            }
+            char item[64];
+            snprintf(item, sizeof(item), "%s{\"address\":%u,\"value\":%u}",
+                     first ? "" : ",", p->address, status->values[p->address]);
+            httpd_resp_sendstr_chunk(req, item);
+            first = false;
+        }
+        httpd_resp_sendstr_chunk(req, "]");
+    }
+
+    httpd_resp_sendstr_chunk(req, "}");
+    return httpd_resp_send_chunk(req, NULL, 0);
 }
 
 static esp_err_t param_readback_handler(httpd_req_t *req)
@@ -1124,17 +1184,17 @@ static esp_err_t param_readback_handler(httpd_req_t *req)
     }
 
     uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT];
-    uint16_t values[APP_PARAM_BIN_PARAM_COUNT];
     build_param_defaults(parsed, defaults);
-    ret = app_param_board_read(defaults, values, err_msg, sizeof(err_msg));
+    uint32_t op_id = 0;
+    ret = app_param_board_start_read(defaults, &op_id, err_msg, sizeof(err_msg));
+    free(parsed);
     if (ret != ESP_OK) {
-        free(parsed);
-        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "参数回读失败");
+        return send_json_error(req,
+                               ret == ESP_ERR_INVALID_STATE ? "409 Conflict" : "500 Internal Server Error",
+                               err_msg[0] ? err_msg : "参数回读启动失败");
     }
 
-    send_visible_values_json(req, parsed, values);
-    free(parsed);
-    return ESP_OK;
+    return send_param_board_started_json(req, op_id);
 }
 
 static esp_err_t param_connect_cancel_handler(httpd_req_t *req)
@@ -1147,6 +1207,51 @@ static esp_err_t param_connect_cancel_handler(httpd_req_t *req)
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
     return httpd_resp_sendstr(req, "{\"ok\":true}");
+}
+
+static esp_err_t param_status_handler(httpd_req_t *req)
+{
+    if (!web_auth_is_logged_in(req)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+
+    char id_text[24] = {0};
+    if (get_query_value(req, "id", id_text, sizeof(id_text)) != ESP_OK) {
+        return send_json_error(req, "400 Bad Request", "缺少操作 ID");
+    }
+
+    char *end = NULL;
+    unsigned long id = strtoul(id_text, &end, 10);
+    if (end == id_text || *end != '\0' || id == 0 || id > UINT32_MAX) {
+        return send_json_error(req, "400 Bad Request", "操作 ID 无效");
+    }
+
+    char err_msg[APP_PARAM_BOARD_ERR_MSG_SIZE] = {0};
+    app_param_board_status_t status;
+    esp_err_t ret = app_param_board_get_status((uint32_t)id, &status, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        return send_json_error(req,
+                               ret == ESP_ERR_NOT_FOUND ? "404 Not Found" : "500 Internal Server Error",
+                               err_msg[0] ? err_msg : "查询参数操作状态失败");
+    }
+
+    app_param_bin_result_t *parsed = NULL;
+    if (status.has_values) {
+        char encoded_path[APP_WEB_MAX_PATH] = {0};
+        if (get_query_value(req, "path", encoded_path, sizeof(encoded_path)) != ESP_OK) {
+            return send_json_error(req, "400 Bad Request", "缺少文件路径");
+        }
+        ret = load_parsed_bin(encoded_path, &parsed, err_msg, sizeof(err_msg));
+        if (ret != ESP_OK) {
+            return send_json_error(req,
+                                   ret == ESP_ERR_INVALID_ARG ? "400 Bad Request" : "422 Unprocessable Entity",
+                                   err_msg[0] ? err_msg : "解析板卡配置失败");
+        }
+    }
+
+    ret = send_param_board_status_json(req, &status, parsed);
+    free(parsed);
+    return ret;
 }
 
 static esp_err_t param_download_handler(httpd_req_t *req)
@@ -1204,15 +1309,16 @@ static esp_err_t param_download_handler(httpd_req_t *req)
         }
     }
 
-    ret = app_param_board_write(values, err_msg, sizeof(err_msg));
+    uint32_t op_id = 0;
+    ret = app_param_board_start_write(values, &op_id, err_msg, sizeof(err_msg));
     free(parsed);
     if (ret != ESP_OK) {
-        return send_json_error(req, "500 Internal Server Error", err_msg[0] ? err_msg : "参数下载失败");
+        return send_json_error(req,
+                               ret == ESP_ERR_INVALID_STATE ? "409 Conflict" : "500 Internal Server Error",
+                               err_msg[0] ? err_msg : "参数下载启动失败");
     }
 
-    httpd_resp_set_type(req, "application/json; charset=utf-8");
-    set_connection_close(req);
-    return httpd_resp_sendstr(req, "{\"ok\":true}");
+    return send_param_board_started_json(req, op_id);
 }
 
 esp_err_t app_web_file_server_start(const char *mount_point)
@@ -1234,7 +1340,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     config.server_port = 80;
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 12288;
-    config.max_uri_handlers = 14;
+    config.max_uri_handlers = 15;
     config.max_open_sockets = 4;
     config.lru_purge_enable = true;
     config.recv_wait_timeout = 60;
@@ -1259,6 +1365,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     const httpd_uri_t bin_parse_uri = {.uri = "/api/bin/parse", .method = HTTP_GET, .handler = bin_parse_handler};
     const httpd_uri_t param_readback_uri = {.uri = "/api/param/readback", .method = HTTP_POST, .handler = param_readback_handler};
     const httpd_uri_t param_connect_cancel_uri = {.uri = "/api/param/connect/cancel", .method = HTTP_POST, .handler = param_connect_cancel_handler};
+    const httpd_uri_t param_status_uri = {.uri = "/api/param/status", .method = HTTP_GET, .handler = param_status_handler};
     const httpd_uri_t param_download_uri = {.uri = "/api/param/download", .method = HTTP_POST, .handler = param_download_handler};
 
     esp_err_t ret = httpd_register_uri_handler(s_server, &index_uri);
@@ -1287,6 +1394,8 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/readback failed");
     ret = httpd_register_uri_handler(s_server, &param_connect_cancel_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/connect/cancel failed");
+    ret = httpd_register_uri_handler(s_server, &param_status_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/status failed");
     ret = httpd_register_uri_handler(s_server, &param_download_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/download failed");
 
