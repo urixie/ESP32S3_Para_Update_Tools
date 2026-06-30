@@ -30,8 +30,8 @@ void app_main(void)
 
     bsp_init();
 
-    app_wifi_set_got_ip_callback(start_file_server_on_ip);
-    ret = app_wifi_sta_start();
+    app_wifi_set_ready_callback(start_file_server_on_ip);
+    ret = app_wifi_ap_start();
     if (ret != ESP_OK) {
         ESP_LOGW(TAG, "WiFi/web parameter manager disabled: %s", esp_err_to_name(ret));
     }

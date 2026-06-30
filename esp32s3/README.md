@@ -66,11 +66,12 @@ idf.py build
 
 ## Wi-Fi 配置
 
-当前仍沿用原项目硬编码 STA 配置：
+当前固件使用硬编码 SoftAP 配置：
 
 ```c
-#define APP_WIFI_SSID "UniEdge2022"
-#define APP_WIFI_PASSWORD "uniedgehome"
+#define APP_WIFI_AP_SSID "Uniedge驱动器参数更新"
+#define APP_WIFI_AP_PASSWORD "12345678"
 ```
 
 路径：`components/app_wifi/app_wifi.c`
+AP 默认地址：`http://192.168.4.1/`

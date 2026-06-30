@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-typedef esp_err_t (*app_wifi_got_ip_cb_t)(const char *ip_addr);
+typedef esp_err_t (*app_wifi_ready_cb_t)(const char *ip_addr);
 
-void app_wifi_set_got_ip_callback(app_wifi_got_ip_cb_t cb);
-esp_err_t app_wifi_sta_start(void);
+void app_wifi_set_ready_callback(app_wifi_ready_cb_t cb);
+esp_err_t app_wifi_ap_start(void);
 
 #ifdef __cplusplus
 }
