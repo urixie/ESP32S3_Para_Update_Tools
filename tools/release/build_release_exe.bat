@@ -102,10 +102,13 @@ if "!NEED_NPM_INSTALL!"=="1" (
         call npm install
     )
 
-    if errorlevel 1 (
-        echo [ERROR] npm dependency installation failed.
+    set "NPM_INSTALL_EXIT=!ERRORLEVEL!"
+    if not "!NPM_INSTALL_EXIT!"=="0" (
+        echo [ERROR] npm dependency installation failed. Exit code: !NPM_INSTALL_EXIT!
+        if exist "%PROJECT_DIR%\node_modules\.deps-ok" del /f /q "%PROJECT_DIR%\node_modules\.deps-ok" >nul 2>nul
+        echo [HINT] Close any running npm/vite/tauri process, then retry this script.
         pause
-        exit /b 1
+        exit /b !NPM_INSTALL_EXIT!
     )
 
     node -e "require('fs').writeFileSync('node_modules/.deps-ok', new Date().toISOString())" >nul 2>nul

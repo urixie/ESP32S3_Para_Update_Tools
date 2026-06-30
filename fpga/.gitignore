@@ -1,0 +1,23 @@
+# TD build outputs
+/td/*Runs/
+/td/*.log
+
+# Debug and simulation scratch
+/debug/*.vcd
+/debug/*.fst
+/debug/*.gtkw
+/debug/*.vvp
+/debug/work/
+/debug/waves/
+*.vcd
+*.fst
+*.gtkw
+*.vvp
+
+# Local editor and OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
