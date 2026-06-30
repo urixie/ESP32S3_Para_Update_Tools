@@ -19,6 +19,7 @@
 #define PARAM_BOARD_BAUD_RATE 921600
 #define PARAM_BOARD_RX_BUF_SIZE 256
 #define PARAM_BOARD_TX_BUF_SIZE 256
+#define PARAM_BOARD_UART_EVENT_QUEUE_SIZE 6
 
 #define FLASH_READ_CMD ((uint8_t)0x11)
 #define FLASH_WRITE_CMD ((uint8_t)0x22)
@@ -189,6 +190,7 @@ static void frame_prepare(param_uart_frame_t *frame, uint8_t cmd, uint32_t secto
 
 static int frame_recv(param_uart_frame_t *frame, uint8_t operation, TickType_t timeout)
 {
+    int ret = 0;
     int bytes_read = uart_read_bytes(PARAM_BOARD_UART_NUM, (uint8_t *)frame, sizeof(*frame), timeout);
     if (bytes_read != sizeof(*frame)) {
         return -1;
@@ -207,7 +209,7 @@ static int frame_recv(param_uart_frame_t *frame, uint8_t operation, TickType_t t
     bool crc_all_ff = (frame->data_crc[0] == 0xFF && frame->data_crc[1] == 0xFF);
     if (data_all_ff && crc_all_ff) {
         if (operation == FLASH_READ_CMD) {
-            return 1;
+            ret = 1;
         }
     } else {
         uint16_t crc = crc16_modbus(frame->data, sizeof(frame->data));
@@ -229,7 +231,7 @@ static int frame_recv(param_uart_frame_t *frame, uint8_t operation, TickType_t t
     if (frame->frame_end != PARAM_FRAME_RX_END) {
         return -5;
     }
-    return 0;
+    return ret;
 }
 
 static int flash_operate(param_uart_frame_t *send, param_uart_frame_t *recv, uint8_t operation, uint32_t sector_addr)
@@ -241,7 +243,7 @@ static int flash_operate(param_uart_frame_t *send, param_uart_frame_t *recv, uin
         uart_flush_input(PARAM_BOARD_UART_NUM);
         uart_write_bytes(PARAM_BOARD_UART_NUM, (const char *)send, sizeof(*send));
         vTaskDelay(pdMS_TO_TICKS(operation == FLASH_ERASE_CMD ? 65 : 10));
-        ret = frame_recv(recv, operation, pdMS_TO_TICKS(8));
+        ret = frame_recv(recv, operation, pdMS_TO_TICKS(3));
         if (ret != -1) {
             break;
         }
@@ -292,10 +294,9 @@ static int board_connect(param_uart_frame_t *send, param_uart_frame_t *recv, uin
             return -2;
         }
         memset(recv, 0, sizeof(*recv));
-        uart_flush_input(PARAM_BOARD_UART_NUM);
         uart_write_bytes(PARAM_BOARD_UART_NUM, (const char *)send, sizeof(*send));
-        vTaskDelay(pdMS_TO_TICKS(10));
-        int ret = frame_recv(recv, FLASH_GET_DNA_CMD, pdMS_TO_TICKS(8));
+        vTaskDelay(pdMS_TO_TICKS(1));
+        int ret = frame_recv(recv, FLASH_GET_DNA_CMD, pdMS_TO_TICKS(3));
         if (ret == 0) {
             ESP_LOGI(TAG, "board handshake ok");
             return 0;
@@ -546,7 +547,7 @@ esp_err_t app_param_board_init(void)
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 122,
-        .source_clk = UART_SCLK_DEFAULT,
+        .source_clk = UART_SCLK_APB,
     };
 
     ESP_RETURN_ON_ERROR(uart_param_config(PARAM_BOARD_UART_NUM, &uart_config), TAG, "uart config failed");
@@ -554,7 +555,7 @@ esp_err_t app_param_board_init(void)
                                      UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
                         TAG, "uart pin config failed");
     ESP_RETURN_ON_ERROR(uart_driver_install(PARAM_BOARD_UART_NUM, PARAM_BOARD_RX_BUF_SIZE,
-                                            PARAM_BOARD_TX_BUF_SIZE, 0, NULL, 0),
+                                            PARAM_BOARD_TX_BUF_SIZE, PARAM_BOARD_UART_EVENT_QUEUE_SIZE, NULL, 0),
                         TAG, "uart driver install failed");
     s_uart_ready = true;
     ESP_LOGI(TAG, "UART%d ready: tx=%d rx=%d baud=%d",
