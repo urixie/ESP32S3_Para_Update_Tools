@@ -466,6 +466,66 @@ td.name,
   line-height: 1.55;
 }
 
+.connect-panel {
+  width: min(420px, 100%);
+}
+
+.connect-body {
+  display: grid;
+  gap: 16px;
+  padding: 20px 18px 18px;
+}
+
+.connect-status {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.connect-spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(33, 212, 253, .22);
+  border-top-color: var(--cyan);
+  animation: spin 1s linear infinite;
+}
+
+.connect-title {
+  color: #E8FFF6;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.connect-text {
+  margin-top: 4px;
+  color: #BFEADC;
+  line-height: 1.55;
+}
+
+.connect-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.connect-cancel {
+  border-color: rgba(255, 90, 79, .7);
+  color: #FFD7D3;
+  background: #3A2023;
+}
+
+.connect-cancel:hover {
+  border-color: #FF8A80;
+  background: #55282A;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 640px) {
   .about-row {
     grid-template-columns: 1fr;
@@ -489,6 +549,25 @@ td.name,
       <div class="about-row"><div class="about-label">功能</div><div class="about-value">对外供电软硬件版本管理、多型号芯片脱机烧录、烧录次数管理</div></div>
       <div class="about-row"><div class="about-label">版权</div><div class="about-value">北京联研国芯技术有限责任公司保留所有权利</div></div>
       <div class="about-note">© 技术支持</div>
+    </div>
+  </section>
+</div>
+<div id="connectDialog" class="about-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
+  <section class="about-panel connect-panel">
+    <div class="about-head">
+      <h2 id="connectTitle">正在连接板卡</h2>
+    </div>
+    <div class="connect-body">
+      <div class="connect-status">
+        <div class="connect-spinner" aria-hidden="true"></div>
+        <div>
+          <div id="connectAction" class="connect-title">正在和参数板卡握手</div>
+          <div class="connect-text">如果板卡未连接成功，系统会持续尝试连接。点击取消连接将退出当前操作。</div>
+        </div>
+      </div>
+      <div class="connect-actions">
+        <button type="button" class="connect-cancel" onclick="cancelBoardConnect()">取消连接</button>
+      </div>
     </div>
   </section>
 </div>
@@ -571,6 +650,7 @@ const paramCounts={}; // path -> 已解析得到的参数数量
 const boardParamStates={}; // path -> { parameters: [], currentParamType: 'control', parsed: false }
 let allFiles=[],binFiles=[],selected=null,uploading=false,paramBusy=false,parsedParams=[],currentParamType='control',currentPage='files';
 let toastTimer=null;
+let boardConnectCanceled=false;
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setMsg(s,ok=false){$('msg').className='msg '+(ok?'ok':'');$('msg').textContent=s||''}
@@ -592,9 +672,54 @@ function setParamBusy(b){
   $('btnReadback').disabled=disabled;
   $('btnDownload').disabled=disabled;
 }
-async function postForm(url,fields){
+function openBoardConnectDialog(actionText){
+  $('connectAction').textContent=actionText||'正在和参数板卡握手';
+  $('connectDialog').classList.remove('hidden');
+}
+function closeBoardConnectDialog(){
+  $('connectDialog').classList.add('hidden');
+}
+function isBoardConnectError(e){
+  const msg=String(e&&e.message?e.message:'');
+  return msg.includes('连接参数板卡失败')||msg.includes('已取消连接参数板卡');
+}
+function cancelBoardConnect(){
+  boardConnectCanceled=true;
+  closeBoardConnectDialog();
+  showToast('已取消连接');
+  try{
+    fetch('/api/param/connect/cancel',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'',keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+async function runParamBoardOperation(actionText,url,fields){
+  boardConnectCanceled=false;
+  openBoardConnectDialog(actionText);
+  try{
+    while(!boardConnectCanceled){
+      try{
+        const result=await postForm(url,fields);
+        return boardConnectCanceled?null:result;
+      }catch(e){
+        if(boardConnectCanceled)return null;
+        if(!isBoardConnectError(e))throw e;
+        $('connectAction').textContent='板卡未连接，正在继续握手';
+        await new Promise(resolve=>setTimeout(resolve,150));
+      }
+    }
+    return null;
+  }catch(e){
+    if(boardConnectCanceled)return null;
+    throw e;
+  }finally{
+    closeBoardConnectDialog();
+    boardConnectCanceled=false;
+  }
+}
+async function postForm(url,fields,options={}){
   const body=new URLSearchParams(fields);
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  const fetchOptions={method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body};
+  if(options.signal)fetchOptions.signal=options.signal;
+  const r=await fetch(url,fetchOptions);
   let j=null;
   try{j=await r.json();}catch(e){j={ok:false,error:r.statusText};}
   if(r.status===401){location.href='/';return null;}
@@ -802,7 +927,7 @@ async function parseSelected(){
       const oldByAddr=oldParams.find(o=>o&&o.address!=null&&p.address!=null&&Number(o.address)===Number(p.address));
       const oldByKey=oldParams.find(o=>o&&o.name===p.name&&normParamType(o)===normParamType(p));
       const old=oldByAddr||oldByKey||oldParams[i];
-      return old&&old.currentValue!=null?{...p,currentValue:old.currentValue}:{...p};
+      return old&&old.currentValue!=null?{...p,currentValue:old.currentValue}:{...p,currentValue:p.defaultValue};
     });
     state.parameters=newParams;
     state.currentParamType='control';
@@ -859,7 +984,7 @@ async function actReadback(){
   try{
     setParamBusy(true);
     showToast('正在回读参数...',1200);
-    const j=await postForm('/api/param/readback',{path});
+    const j=await runParamBoardOperation('正在连接板卡并回读参数','/api/param/readback',{path});
     if(!j)return;
     if(!(selected&&selected.path===path))return;
     const valueMap={};
@@ -904,7 +1029,7 @@ async function actDownload(){
   try{
     setParamBusy(true);
     showToast('正在下载参数...',1200);
-    const j=await postForm('/api/param/download',{path,values:pairs.join(',')});
+    const j=await runParamBoardOperation('正在连接板卡并下载参数','/api/param/download',{path,values:pairs.join(',')});
     if(!j)return;
     showToast('参数下载成功');
   }catch(e){

@@ -339,7 +339,7 @@ static esp_err_t read_form_body(httpd_req_t *req, char *body, size_t body_size)
 
 static esp_err_t get_form_value_decoded(const char *body, const char *key, char *out, size_t out_size)
 {
-    char encoded[APP_WEB_MAX_PATH];
+    char encoded[APP_WEB_PARAM_FORM_BUF_SIZE];
     if (httpd_query_key_value(body, key, encoded, sizeof(encoded)) != ESP_OK) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -1137,6 +1137,18 @@ static esp_err_t param_readback_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t param_connect_cancel_handler(httpd_req_t *req)
+{
+    if (!web_auth_is_logged_in(req)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+
+    app_param_board_cancel_connect();
+    httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_connection_close(req);
+    return httpd_resp_sendstr(req, "{\"ok\":true}");
+}
+
 static esp_err_t param_download_handler(httpd_req_t *req)
 {
     if (!web_auth_is_logged_in(req)) {
@@ -1153,14 +1165,17 @@ static esp_err_t param_download_handler(httpd_req_t *req)
         return send_json_error(req, "400 Bad Request", "缺少文件路径");
     }
 
+    esp_err_t ret;
     char values_text[1024] = {0};
-    if (get_form_value_decoded(body, "values", values_text, sizeof(values_text)) != ESP_OK) {
-        return send_json_error(req, "400 Bad Request", "缺少参数值");
+    ret = get_form_value_decoded(body, "values", values_text, sizeof(values_text));
+    if (ret != ESP_OK) {
+        return send_json_error(req, "400 Bad Request",
+                               ret == ESP_ERR_NOT_FOUND ? "缺少参数值" : "参数值过长");
     }
 
     char err_msg[160] = {0};
     app_param_bin_result_t *parsed = NULL;
-    esp_err_t ret = load_parsed_bin(encoded_path, &parsed, err_msg, sizeof(err_msg));
+    ret = load_parsed_bin(encoded_path, &parsed, err_msg, sizeof(err_msg));
     if (ret != ESP_OK) {
         return send_json_error(req, ret == ESP_ERR_INVALID_ARG ? "400 Bad Request" : "422 Unprocessable Entity",
                                err_msg[0] ? err_msg : "解析板卡配置失败");
@@ -1243,6 +1258,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     const httpd_uri_t delete_uri = {.uri = "/delete", .method = HTTP_POST, .handler = delete_handler};
     const httpd_uri_t bin_parse_uri = {.uri = "/api/bin/parse", .method = HTTP_GET, .handler = bin_parse_handler};
     const httpd_uri_t param_readback_uri = {.uri = "/api/param/readback", .method = HTTP_POST, .handler = param_readback_handler};
+    const httpd_uri_t param_connect_cancel_uri = {.uri = "/api/param/connect/cancel", .method = HTTP_POST, .handler = param_connect_cancel_handler};
     const httpd_uri_t param_download_uri = {.uri = "/api/param/download", .method = HTTP_POST, .handler = param_download_handler};
 
     esp_err_t ret = httpd_register_uri_handler(s_server, &index_uri);
@@ -1269,6 +1285,8 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/bin/parse failed");
     ret = httpd_register_uri_handler(s_server, &param_readback_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/readback failed");
+    ret = httpd_register_uri_handler(s_server, &param_connect_cancel_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/connect/cancel failed");
     ret = httpd_register_uri_handler(s_server, &param_download_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/download failed");
 

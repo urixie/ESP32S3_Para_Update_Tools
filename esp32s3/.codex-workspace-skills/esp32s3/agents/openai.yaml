@@ -1,4 +1,4 @@
 interface:
-  display_name: "ESP32-S3 ST7789 LVGL Web"
-  short_description: "Project rules for LVGL, web file manager, and OTA"
-  default_prompt: "Use $esp32s3-st7789-lvgl-web when changing this ESP32-S3 LVGL web file manager firmware."
+  display_name: "ESP32-S3 Web File System"
+  short_description: "ESP32-S3 web FS: FAT, HTTP, Wi-Fi, Chinese safe edits."
+  default_prompt: "Use $esp32s3-web-file-system when changing this ESP32-S3 web file-system firmware. On Windows, search Chinese source text with rg/fd first and avoid PowerShell text pipelines for Chinese files."

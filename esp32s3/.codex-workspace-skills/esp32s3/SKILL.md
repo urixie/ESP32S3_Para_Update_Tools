@@ -1,6 +1,6 @@
 ---
 name: esp32s3-web-file-system
-description: Project-specific workflow for the ESP32-S3 web file-system firmware in this workspace. Use when editing FAT storage mounting, Wi-Fi startup, HTTP login/file APIs, web file listing/upload/download/delete behavior, partition layout, or ESP-IDF build validation in this project.
+description: Project-specific workflow for the ESP32-S3 web file-system firmware in this workspace. Use when editing FAT storage mounting, Wi-Fi startup, HTTP login/file APIs, web file listing/upload/download/delete behavior, partition layout, ESP-IDF build validation, or Windows Chinese source search and encoding-safe edits in this project.
 ---
 
 # ESP32-S3 Web File-System Firmware
@@ -22,6 +22,166 @@ For source reading and editing on Windows, prefer `rg` for search.
 Avoid PowerShell text rewriting for source files that contain Chinese UI strings because the console code page can display mojibake. Use `apply_patch` for manual edits. If scripting is unavoidable, read and write UTF-8 explicitly.
 
 If terminal output shows mojibake, verify against UTF-8 source bytes or build behavior instead of trusting console rendering.
+
+## Windows Chinese Search Contract
+
+On Windows, when searching Chinese source code, Chinese comments, Chinese UI strings, Chinese HTML text, or Chinese log strings, use `rg` first. Do not prefer PowerShell text search for Chinese content.
+
+Use fixed-string search for ordinary keywords:
+
+```powershell
+rg -n -F "关键词" .
+```
+
+Use Unicode Han matching when searching for Chinese characters broadly:
+
+```powershell
+rg -n "\p{Han}+" .
+```
+
+Use file-type globs when the target surface is known:
+
+```powershell
+rg -n -F "关键词" -g "*.c" -g "*.h" .
+rg -n -F "关键词" -g "*.html" -g "*.css" -g "*.js" .
+```
+
+Exclude build outputs and dependency directories by default:
+
+```powershell
+rg -n -F "关键词" . --glob "!build" --glob "!managed_components" --glob "!.git" --glob "!node_modules" --glob "!dist" --glob "!target"
+```
+
+If UTF-8 search does not find text but the user clearly says Chinese text exists in the code, try GBK:
+
+```powershell
+rg -n --encoding gbk -F "关键词" .
+```
+
+If a file may be UTF-16, try UTF-16LE:
+
+```powershell
+rg -n --encoding utf-16le -F "关键词" .
+```
+
+If terminal output looks garbled, do not assume the source file is garbled. Verify with `rg`, editor-visible content, build behavior, or Python with explicit encoding reads.
+
+## Avoid These Windows Search Patterns
+
+Unless the user explicitly asks for them, do not use these commands for Chinese source, comment, UI, HTML, or log string search:
+
+```powershell
+Select-String
+findstr
+Get-Content | Where-Object
+Get-ChildItem -Recurse | Select-String
+type file | findstr
+```
+
+These patterns can fail to match Chinese text or print mojibake in Windows console, PowerShell pipeline, and mixed GBK/UTF-8 source environments. A failed PowerShell search is not enough evidence that the Chinese code or string does not exist.
+
+## Search Fallbacks
+
+If `rg` is not available, check the tool first:
+
+```powershell
+where rg
+rg --version
+```
+
+If `rg` is not installed, do not directly fall back to PowerShell Chinese text search. Prefer Python search with explicit encodings:
+
+```powershell
+python - <<'PY'
+from pathlib import Path
+
+keyword = "关键词"
+roots = [Path(".")]
+suffixes = {".c", ".h", ".html", ".css", ".js", ".ts", ".tsx", ".md", ".csv"}
+
+skip_dirs = {".git", "build", "managed_components", "node_modules", "dist", "target"}
+
+for root in roots:
+    for path in root.rglob("*"):
+        if any(part in skip_dirs for part in path.parts):
+            continue
+        if not path.is_file() or path.suffix.lower() not in suffixes:
+            continue
+
+        text = None
+        for enc in ("utf-8", "gbk", "utf-16le"):
+            try:
+                text = path.read_text(encoding=enc)
+                break
+            except UnicodeDecodeError:
+                continue
+            except OSError:
+                break
+
+        if text is None:
+            continue
+
+        for i, line in enumerate(text.splitlines(), 1):
+            if keyword in line:
+                print(f"{path}:{i}:{line}")
+PY
+```
+
+If the active PowerShell does not support heredoc-style input, create a temporary `.py` file and run it. The Python script must explicitly specify encodings. Do not use PowerShell pipelines to read Chinese source files.
+
+## File Name Search
+
+For filename discovery, prefer `fd`:
+
+```powershell
+fd app.html
+fd SKILL.md
+fd -e c
+fd -e h
+fd -e html
+```
+
+If `fd` is unavailable, use `rg --files`:
+
+```powershell
+rg --files
+rg --files | rg -F "app.html"
+```
+
+Do not prefer:
+
+```powershell
+Get-ChildItem -Recurse
+```
+
+It is slower in large repositories, and Codex often mistakes PowerShell output encoding issues for source encoding problems.
+
+## Mandatory Search Workflow Before Editing
+
+Before editing any file that contains Chinese UI text, Chinese logs, Chinese comments, or Chinese web strings:
+
+1. Confirm the target path with `rg --files` or `fd`.
+2. Locate context with `rg -n -F "关键词" 文件路径`.
+3. If there is no match but the user supplied a clear keyword, try:
+   - `rg -n --encoding gbk -F "关键词" .`
+   - `rg -n --encoding utf-16le -F "关键词" .`
+   - Python explicit-encoding search.
+4. Only say the code was not found after multiple search methods fail.
+5. Never conclude the matching code does not exist from one failed PowerShell search.
+
+## Safe Editing For Chinese Source Files
+
+When editing files that contain Chinese text, prefer `apply_patch`.
+
+Do not rewrite Chinese source files with PowerShell `Set-Content`, `Out-File`, or redirection `>`.
+
+If a script must edit a Chinese-containing file:
+
+- use `encoding="utf-8"` explicitly;
+- preserve the existing newline style;
+- after editing, run `rg -n "\p{Han}+" 文件路径` to confirm Chinese text is still readable.
+
+Be especially careful with Chinese strings in `.html`, `.c`, `.h`, and `.css` files.
 
 ## Project Layout
 

@@ -43,6 +43,7 @@ typedef struct {
 
 static const char *TAG = "param_board";
 static bool s_uart_ready;
+static volatile bool s_connect_cancel_requested;
 static SemaphoreHandle_t s_lock;
 
 static const uint32_t s_param_store_addr_table[32] = {
@@ -194,7 +195,7 @@ static int board_connect(param_uart_frame_t *send, param_uart_frame_t *recv)
     }
     frame_prepare(send, FLASH_GET_DNA_CMD, 0);
 
-    for (int i = 0; i < PARAM_CONNECT_ATTEMPTS; i++) {
+    for (int i = 0; i < PARAM_CONNECT_ATTEMPTS && !s_connect_cancel_requested; i++) {
         memset(recv, 0, sizeof(*recv));
         uart_flush_input(PARAM_BOARD_UART_NUM);
         uart_write_bytes(PARAM_BOARD_UART_NUM, (const char *)send, sizeof(*send));
@@ -204,7 +205,7 @@ static int board_connect(param_uart_frame_t *send, param_uart_frame_t *recv)
             return 0;
         }
     }
-    return -1;
+    return s_connect_cancel_requested ? -2 : -1;
 }
 
 static int get_param_store_addr(param_uart_frame_t *send, param_uart_frame_t *recv, uint32_t *store_addr)
@@ -323,11 +324,12 @@ esp_err_t app_param_board_read(const uint16_t defaults[72], uint16_t values[72],
     param_uart_frame_t send = {0};
     param_uart_frame_t recv = {0};
     uint32_t store_addr = 0;
+    s_connect_cancel_requested = false;
     int ret = board_connect(&send, &recv);
     if (ret != 0) {
-        set_err(err_msg, err_msg_size, "连接参数板卡失败");
+        set_err(err_msg, err_msg_size, ret == -2 ? "已取消连接参数板卡" : "连接参数板卡失败");
         xSemaphoreGive(s_lock);
-        return ESP_ERR_TIMEOUT;
+        return ret == -2 ? ESP_ERR_INVALID_STATE : ESP_ERR_TIMEOUT;
     }
 
     ret = get_param_store_addr(&send, &recv, &store_addr);
@@ -369,11 +371,12 @@ esp_err_t app_param_board_write(const uint16_t values[72], char *err_msg, size_t
     param_uart_frame_t send = {0};
     param_uart_frame_t recv = {0};
     uint32_t store_addr = 0;
+    s_connect_cancel_requested = false;
     int ret = board_connect(&send, &recv);
     if (ret != 0) {
-        set_err(err_msg, err_msg_size, "连接参数板卡失败");
+        set_err(err_msg, err_msg_size, ret == -2 ? "已取消连接参数板卡" : "连接参数板卡失败");
         xSemaphoreGive(s_lock);
-        return ESP_ERR_TIMEOUT;
+        return ret == -2 ? ESP_ERR_INVALID_STATE : ESP_ERR_TIMEOUT;
     }
 
     ret = get_param_store_addr(&send, &recv, &store_addr);
@@ -393,4 +396,9 @@ esp_err_t app_param_board_write(const uint16_t values[72], char *err_msg, size_t
         return ESP_FAIL;
     }
     return ESP_OK;
+}
+
+void app_param_board_cancel_connect(void)
+{
+    s_connect_cancel_requested = true;
 }
