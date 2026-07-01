@@ -15,6 +15,7 @@
 #include "app_param_bin.h"
 #include "app_param_board.h"
 #include "app_storage_lock.h"
+#include "esp_app_desc.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_http_server.h"
@@ -426,6 +427,59 @@ static esp_err_t auth_status_handler(httpd_req_t *req)
     httpd_resp_set_status(req, "401 Unauthorized");
     set_connection_close(req);
     return httpd_resp_sendstr(req, "{\"ok\":false,\"login\":false}");
+}
+
+static int month_number_from_name(const char *month_name)
+{
+    static const char *const months[] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    };
+
+    for (int i = 0; i < 12; i++) {
+        if (strncmp(month_name, months[i], 3) == 0) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+static void format_app_build_time(char *out, size_t out_size)
+{
+    const esp_app_desc_t *desc = esp_app_get_description();
+    if (desc == NULL || out == NULL || out_size == 0) {
+        return;
+    }
+
+    char month_name[4] = {0};
+    int day = 0;
+    int year = 0;
+    if (sscanf(desc->date, "%3s %d %d", month_name, &day, &year) == 3) {
+        int month = month_number_from_name(month_name);
+        if (month > 0) {
+            snprintf(out, out_size, "%04d-%02d-%02d %s", year, month, day, desc->time);
+            return;
+        }
+    }
+
+    snprintf(out, out_size, "%s %s", desc->date, desc->time);
+}
+
+static esp_err_t app_info_handler(httpd_req_t *req)
+{
+    if (!web_auth_is_logged_in(req)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+
+    char build_time[40] = {0};
+    format_app_build_time(build_time, sizeof(build_time));
+
+    httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_connection_close(req);
+    httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"buildTime\":\"");
+    json_escape_send(req, build_time);
+    httpd_resp_sendstr_chunk(req, "\"}");
+    return httpd_resp_send_chunk(req, NULL, 0);
 }
 
 static esp_err_t favicon_handler(httpd_req_t *req)
@@ -1340,7 +1394,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     config.server_port = 80;
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 12288;
-    config.max_uri_handlers = 15;
+    config.max_uri_handlers = 16;
     config.max_open_sockets = 4;
     config.lru_purge_enable = true;
     config.recv_wait_timeout = 60;
@@ -1357,6 +1411,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     const httpd_uri_t login_uri = {.uri = "/api/login", .method = HTTP_POST, .handler = login_handler};
     const httpd_uri_t logout_uri = {.uri = "/api/logout", .method = HTTP_POST, .handler = logout_handler};
     const httpd_uri_t auth_status_uri = {.uri = "/api/auth/status", .method = HTTP_GET, .handler = auth_status_handler};
+    const httpd_uri_t app_info_uri = {.uri = "/api/app/info", .method = HTTP_GET, .handler = app_info_handler};
     const httpd_uri_t favicon_uri = {.uri = "/favicon.ico", .method = HTTP_GET, .handler = favicon_handler};
     const httpd_uri_t files_uri = {.uri = "/files", .method = HTTP_GET, .handler = files_handler};
     const httpd_uri_t download_uri = {.uri = "/download", .method = HTTP_GET, .handler = download_handler};
@@ -1378,6 +1433,8 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/logout failed");
     ret = httpd_register_uri_handler(s_server, &auth_status_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/auth/status failed");
+    ret = httpd_register_uri_handler(s_server, &app_info_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/app/info failed");
     ret = httpd_register_uri_handler(s_server, &favicon_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /favicon.ico failed");
     ret = httpd_register_uri_handler(s_server, &files_uri);
