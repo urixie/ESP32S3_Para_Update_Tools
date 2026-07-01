@@ -58,27 +58,34 @@ static void log_heap_state(const char *where)
     unsigned int total_used_x10 = total_size > 0 ? (unsigned int)(((uint64_t)(total_size - free_size) * 1000U) / total_size) : 0;
     unsigned int internal_used_x10 = internal_total > 0 ? (unsigned int)(((uint64_t)(internal_total - internal_free) * 1000U) / internal_total) : 0;
     unsigned int psram_used_x10 = psram_total > 0 ? (unsigned int)(((uint64_t)(psram_total - psram_free) * 1000U) / psram_total) : 0;
+    unsigned long total_kb = (unsigned long)((total_size + 512U) / 1024U);
+    unsigned long free_kb = (unsigned long)((free_size + 512U) / 1024U);
+    unsigned long min_free_kb = (unsigned long)((min_free_size + 512U) / 1024U);
+    unsigned long internal_total_kb = (unsigned long)((internal_total + 512U) / 1024U);
+    unsigned long internal_free_kb = (unsigned long)((internal_free + 512U) / 1024U);
+    unsigned long psram_total_kb = (unsigned long)((psram_total + 512U) / 1024U);
+    unsigned long psram_free_kb = (unsigned long)((psram_free + 512U) / 1024U);
 
     ESP_LOGI(TAG, "内存状态[%s]", where);
     ESP_LOGI(TAG,
-             "  总内存: 已用 %u.%u%%, 剩余 %lu/%lu 字节, 历史最低剩余 %lu 字节",
+             "  总内存: 已用 %u.%u%%, 剩余 %lu/%lu KB, 历史最低剩余 %lu KB",
              total_used_x10 / 10,
              total_used_x10 % 10,
-             (unsigned long)free_size,
-             (unsigned long)total_size,
-             (unsigned long)min_free_size);
+             free_kb,
+             total_kb,
+             min_free_kb);
     ESP_LOGI(TAG,
-             "  内部RAM: 已用 %u.%u%%, 剩余 %lu/%lu 字节",
+             "  内部RAM: 已用 %u.%u%%, 剩余 %lu/%lu KB",
              internal_used_x10 / 10,
              internal_used_x10 % 10,
-             (unsigned long)internal_free,
-             (unsigned long)internal_total);
+             internal_free_kb,
+             internal_total_kb);
     ESP_LOGI(TAG,
-             "  PSRAM: 已用 %u.%u%%, 剩余 %lu/%lu 字节",
+             "  PSRAM: 已用 %u.%u%%, 剩余 %lu/%lu KB",
              psram_used_x10 / 10,
              psram_used_x10 % 10,
-             (unsigned long)psram_free,
-             (unsigned long)psram_total);
+             psram_free_kb,
+             psram_total_kb);
 }
 
 static void set_connection_close(httpd_req_t *req)
