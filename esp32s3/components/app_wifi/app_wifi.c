@@ -20,6 +20,13 @@ static bool s_started;
 static esp_netif_t *s_ap_netif;
 static app_wifi_ready_cb_t s_ready_cb;
 
+static void suppress_wifi_init_info_logs(void)
+{
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set("wifi_init", ESP_LOG_WARN);
+    esp_log_level_set("phy_init", ESP_LOG_WARN);
+}
+
 void app_wifi_set_ready_callback(app_wifi_ready_cb_t cb)
 {
     s_ready_cb = cb;
@@ -72,6 +79,8 @@ esp_err_t app_wifi_ap_start(void)
 
     s_ap_netif = esp_netif_create_default_wifi_ap();
     ESP_RETURN_ON_FALSE(s_ap_netif != NULL, ESP_FAIL, TAG, "create default wifi ap failed");
+
+    suppress_wifi_init_info_logs();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_RETURN_ON_ERROR(esp_wifi_init(&cfg), TAG, "esp_wifi_init failed");

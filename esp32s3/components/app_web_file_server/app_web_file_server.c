@@ -48,12 +48,37 @@ extern const uint8_t app_html_end[] asm("_binary_app_html_end");
 
 static void log_heap_state(const char *where)
 {
-    ESP_LOGI(TAG, "heap %s: free=%lu, min=%lu, internal=%u, psram=%u",
-             where,
-             (unsigned long)esp_get_free_heap_size(),
-             (unsigned long)esp_get_minimum_free_heap_size(),
-             (unsigned int)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
-             (unsigned int)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+    size_t total_size = heap_caps_get_total_size(MALLOC_CAP_DEFAULT);
+    size_t free_size = esp_get_free_heap_size();
+    size_t min_free_size = esp_get_minimum_free_heap_size();
+    size_t internal_total = heap_caps_get_total_size(MALLOC_CAP_INTERNAL);
+    size_t internal_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    size_t psram_total = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+    size_t psram_free = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    unsigned int total_used_x10 = total_size > 0 ? (unsigned int)(((uint64_t)(total_size - free_size) * 1000U) / total_size) : 0;
+    unsigned int internal_used_x10 = internal_total > 0 ? (unsigned int)(((uint64_t)(internal_total - internal_free) * 1000U) / internal_total) : 0;
+    unsigned int psram_used_x10 = psram_total > 0 ? (unsigned int)(((uint64_t)(psram_total - psram_free) * 1000U) / psram_total) : 0;
+
+    ESP_LOGI(TAG, "内存状态[%s]", where);
+    ESP_LOGI(TAG,
+             "  总内存: 已用 %u.%u%%, 剩余 %lu/%lu 字节, 历史最低剩余 %lu 字节",
+             total_used_x10 / 10,
+             total_used_x10 % 10,
+             (unsigned long)free_size,
+             (unsigned long)total_size,
+             (unsigned long)min_free_size);
+    ESP_LOGI(TAG,
+             "  内部RAM: 已用 %u.%u%%, 剩余 %lu/%lu 字节",
+             internal_used_x10 / 10,
+             internal_used_x10 % 10,
+             (unsigned long)internal_free,
+             (unsigned long)internal_total);
+    ESP_LOGI(TAG,
+             "  PSRAM: 已用 %u.%u%%, 剩余 %lu/%lu 字节",
+             psram_used_x10 / 10,
+             psram_used_x10 % 10,
+             (unsigned long)psram_free,
+             (unsigned long)psram_total);
 }
 
 static void set_connection_close(httpd_req_t *req)
@@ -349,7 +374,7 @@ static esp_err_t get_form_value_decoded(const char *body, const char *key, char 
 
 static esp_err_t index_handler(httpd_req_t *req)
 {
-    log_heap_state("before index");
+    log_heap_state("访问登录页前");
     if (web_auth_is_logged_in(req)) {
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/app");
@@ -361,7 +386,7 @@ static esp_err_t index_handler(httpd_req_t *req)
 
 static esp_err_t app_handler(httpd_req_t *req)
 {
-    log_heap_state("before app");
+    log_heap_state("访问主页面前");
     if (!web_auth_is_logged_in(req)) {
         return redirect_to_login(req);
     }
@@ -654,7 +679,7 @@ static esp_err_t list_dir_entries(httpd_req_t *req, const char *relative_dir, bo
 
 static esp_err_t files_handler(httpd_req_t *req)
 {
-    log_heap_state("before files");
+    log_heap_state("读取文件列表前");
     if (!web_auth_is_logged_in(req)) {
         return send_json_error(req, "401 Unauthorized", "请先登录");
     }
@@ -778,7 +803,7 @@ static esp_err_t upload_handler(httpd_req_t *req)
         return send_json_error(req, "400 Bad Request", "文件名过长");
     }
 
-    log_heap_state("upload start");
+    log_heap_state("文件上传开始");
     ESP_LOGI(TAG, "upload start: %s, tmp=%s, size=%zu", full_path, tmp_path, req->content_len);
     if (app_storage_lock(portMAX_DELAY) != ESP_OK) {
         return send_json_error(req, "503 Service Unavailable", "文件系统忙");
@@ -879,7 +904,7 @@ static esp_err_t upload_handler(httpd_req_t *req)
         return send_json_error(req, "500 Internal Server Error", "上传失败");
     }
 
-    log_heap_state("upload done");
+    log_heap_state("文件上传完成");
     ESP_LOGI(TAG, "upload done: %s, received=%zu", full_path, received);
     httpd_resp_set_type(req, "application/json; charset=utf-8");
     set_connection_close(req);
@@ -1388,7 +1413,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_RETURN_ON_FALSE(len > 0 && (size_t)len < sizeof(s_mount_point), ESP_ERR_INVALID_SIZE,
                         TAG, "mount point too long");
 
-    log_heap_state("before server start");
+    log_heap_state("启动Web服务器前");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
@@ -1404,7 +1429,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
 #endif
 
     ESP_RETURN_ON_ERROR(httpd_start(&s_server, &config), TAG, "httpd_start failed");
-    log_heap_state("after server start");
+    log_heap_state("启动Web服务器后");
 
     const httpd_uri_t index_uri = {.uri = "/", .method = HTTP_GET, .handler = index_handler};
     const httpd_uri_t app_uri = {.uri = "/app", .method = HTTP_GET, .handler = app_handler};
@@ -1456,7 +1481,6 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ret = httpd_register_uri_handler(s_server, &param_download_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, TAG, "register /api/param/download failed");
 
-    ESP_LOGI(TAG, "HTTP parameter bin server started at mount point %s", s_mount_point);
     return ESP_OK;
 
 err_stop:

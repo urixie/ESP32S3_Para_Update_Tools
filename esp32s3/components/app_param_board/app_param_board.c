@@ -35,6 +35,10 @@
 #define PARAM_BOARD_TASK_STACK 4096
 #define PARAM_BOARD_TASK_PRIORITY 5
 
+#ifndef APP_PARAM_BOARD_RAW_DUMP
+#define APP_PARAM_BOARD_RAW_DUMP 1
+#endif
+
 typedef enum {
     PARAM_BOARD_CMD_READ = 0,
     PARAM_BOARD_CMD_WRITE,
@@ -169,6 +173,52 @@ static uint16_t crc16_modbus(const uint8_t *data, size_t length)
     return crc;
 }
 
+#if APP_PARAM_BOARD_RAW_DUMP
+static const char *operation_name(uint8_t operation)
+{
+    switch (operation) {
+    case FLASH_READ_CMD:
+        return "read";
+    case FLASH_WRITE_CMD:
+        return "write";
+    case FLASH_ERASE_CMD:
+        return "erase";
+    case FLASH_GET_DNA_CMD:
+        return "handshake";
+    default:
+        return "unknown";
+    }
+}
+
+static void dump_raw_frame(const char *dir,
+                           const param_uart_frame_t *frame,
+                           uint8_t operation,
+                           uint32_t sector_addr,
+                           int retry,
+                           int ret)
+{
+    ESP_LOGI(TAG,
+             "%s raw frame op=%s(0x%02X) addr=0x%06lX retry=%d ret=%d len=%u",
+             dir,
+             operation_name(operation),
+             operation,
+             (unsigned long)sector_addr,
+             retry,
+             ret,
+             (unsigned int)sizeof(*frame));
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, (const uint8_t *)frame, sizeof(*frame), ESP_LOG_INFO);
+}
+#endif
+
+#if APP_PARAM_BOARD_RAW_DUMP
+#define PARAM_BOARD_DUMP_RAW(dir, frame, operation, sector_addr, retry, ret) \
+    dump_raw_frame((dir), (frame), (operation), (sector_addr), (retry), (ret))
+#else
+#define PARAM_BOARD_DUMP_RAW(dir, frame, operation, sector_addr, retry, ret) \
+    do {                                                                    \
+    } while (0)
+#endif
+
 static void frame_prepare(param_uart_frame_t *frame, uint8_t cmd, uint32_t sector_addr)
 {
     uint16_t crc;
@@ -241,9 +291,22 @@ static int flash_operate(param_uart_frame_t *send, param_uart_frame_t *recv, uin
     for (int retry = 0; retry < PARAM_FLASH_RETRIES; retry++) {
         memset(recv, 0, sizeof(*recv));
         uart_flush_input(PARAM_BOARD_UART_NUM);
+        PARAM_BOARD_DUMP_RAW("tx", send, operation, sector_addr, retry, ret);
         uart_write_bytes(PARAM_BOARD_UART_NUM, (const char *)send, sizeof(*send));
         vTaskDelay(pdMS_TO_TICKS(operation == FLASH_ERASE_CMD ? 65 : 10));
         ret = frame_recv(recv, operation, pdMS_TO_TICKS(3));
+        if (ret != -1) {
+            PARAM_BOARD_DUMP_RAW("rx", recv, operation, sector_addr, retry, ret);
+        } else {
+#if APP_PARAM_BOARD_RAW_DUMP
+            ESP_LOGW(TAG,
+                     "rx raw frame timeout op=%s(0x%02X) addr=0x%06lX retry=%d",
+                     operation_name(operation),
+                     operation,
+                     (unsigned long)sector_addr,
+                     retry);
+#endif
+        }
         if (ret != -1) {
             break;
         }

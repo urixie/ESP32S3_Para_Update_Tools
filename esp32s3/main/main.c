@@ -8,6 +8,18 @@
 
 static const char *TAG = "main";
 
+static void restore_app_info_logs(void)
+{
+    esp_log_level_set("main", ESP_LOG_INFO);
+    esp_log_level_set("app_wifi", ESP_LOG_INFO);
+    esp_log_level_set("web_param", ESP_LOG_INFO);
+    esp_log_level_set("param_board", ESP_LOG_INFO);
+    esp_log_level_set("param_bin", ESP_LOG_INFO);
+    esp_log_level_set("storage_lock", ESP_LOG_INFO);
+    esp_log_level_set("storage", ESP_LOG_INFO);
+    esp_log_level_set("STORAGE", ESP_LOG_INFO);
+}
+
 static esp_err_t start_file_server_on_ip(const char *ip_addr)
 {
     esp_err_t ret = app_web_file_server_start(g_storage.disk_path);
@@ -23,6 +35,8 @@ static esp_err_t start_file_server_on_ip(const char *ip_addr)
 
 void app_main(void)
 {
+    restore_app_info_logs();
+
     esp_err_t ret = app_storage_lock_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "storage lock init failed: %s", esp_err_to_name(ret));
