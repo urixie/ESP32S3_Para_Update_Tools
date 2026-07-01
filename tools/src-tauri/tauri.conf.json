@@ -1,5 +1,5 @@
 {
-  "productName": "UniEdge驱动器加密参数配置工具",
+  "productName": "驱动器参数配置上位机",
   "version": "0.1.0",
   "identifier": "com.uniedge.driverparamtool",
   "build": {
@@ -8,7 +8,7 @@
   "app": {
     "windows": [
       {
-        "title": "UniEdge驱动器加密参数配置工具",
+        "title": "驱动器参数配置上位机",
         "width": 1280,
         "height": 860,
         "resizable": true

@@ -8,18 +8,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$appName = "UniEdge" + [string]::Concat([char[]](
-    0x9A71, # qu dong qi jia mi can shu pei zhi gong ju
+$appName = [string]::Concat([char[]](
+    0x9A71, # qu dong qi can shu pei zhi shang wei ji
     0x52A8,
     0x5668,
-    0x52A0,
-    0x5BC6,
     0x53C2,
     0x6570,
     0x914D,
     0x7F6E,
-    0x5DE5,
-    0x5177
+    0x4E0A,
+    0x4F4D,
+    0x673A
 ))
 $exeName = "$appName.exe"
 $releaseDir = Join-Path $ProjectDir "release"
@@ -51,10 +50,9 @@ if (-not $copied) {
     throw "Failed to copy release exe."
 }
 
-foreach ($staleName in @("ParamBinTool.exe", "param_bin_tool.exe")) {
-    $stalePath = Join-Path $releaseDir $staleName
-    if (Test-Path -LiteralPath $stalePath) {
-        Remove-Item -LiteralPath $stalePath -Force
+foreach ($staleExe in Get-ChildItem -LiteralPath $releaseDir -File -Filter "*.exe") {
+    if ($staleExe.Name -ne $exeName) {
+        Remove-Item -LiteralPath $staleExe.FullName -Force
     }
 }
 
@@ -72,8 +70,9 @@ $readme = @(
     "  2. The generated bin file uses AES-256-GCM encryption.",
     "  3. Chinese parameter names are stored in encrypted payload and should not appear as plaintext in the bin file.",
     "  4. This is not an installer. It is a directly runnable exe.",
-    "  5. Windows WebView2 Runtime may be required on older Windows systems.",
-    "  6. Fixed 72 parameters, addresses 0~71, simplified 17-byte Header + AES-GCM Payload.",
+    "  5. The VC++ runtime is statically linked into the exe build.",
+    "  6. Windows WebView2 Runtime may still be required on older Windows systems.",
+    "  7. Fixed 72 parameters, addresses 0~71, simplified 17-byte Header + AES-GCM Payload.",
     "",
     "For ESP32 firmware integration, see docs/bin_protocol.md.",
     ""

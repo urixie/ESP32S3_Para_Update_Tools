@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 chcp 65001 >nul
 
 echo ========================================
-echo UniEdge Release EXE Builder
+echo 驱动器参数配置上位机 Release EXE Builder
 echo ========================================
 
 REM Optional:
