@@ -1514,6 +1514,9 @@ body::before {
 
 <script>
 const $=id=>document.getElementById(id);
+const PARAM_TIME_BASE_NS=50;
+const PARAM_MAX_BOARD_VALUE=65535;
+const PARAM_MAX_NS=PARAM_MAX_BOARD_VALUE*PARAM_TIME_BASE_NS;
 const paramCounts={}; // path -> 已解析得到的参数数量
 const boardParamStates={}; // path -> { parameters: [], currentParamType: 'control', parsed: false }
 let allFiles=[],binFiles=[],selected=null,uploading=false,paramBusy=false,parsedParams=[],currentParamType='control',currentPage='params';
@@ -1776,7 +1779,7 @@ function renderParamTable(){
       if(!x)return '<td class="name param-empty-cell"></td><td class="value param-empty-cell"></td>';
       const v=x.p.currentValue==null?'':x.p.currentValue;
       return '<td class="name">'+esc(x.p.name)+'</td>'
-        +'<td class="value"><span class="param-value-cell"><input class="param-value-input" type="number" min="0" max="65535" step="1" inputmode="numeric" data-index="'+x.i+'" value="'+esc(v)+'"><span class="param-unit">ns</span></span></td>';
+        +'<td class="value"><span class="param-value-cell"><input class="param-value-input" type="number" min="0" max="'+PARAM_MAX_NS+'" step="'+PARAM_TIME_BASE_NS+'" inputmode="numeric" data-index="'+x.i+'" value="'+esc(v)+'"><span class="param-unit">ns</span></span></td>';
     }).join('');
     rows.push('<tr>'+cells+'</tr>');
   }
@@ -1800,7 +1803,7 @@ function renderParamTable(){
       }
 
       if(v<0)v=0;
-      if(v>65535)v=65535;
+      if(v>PARAM_MAX_NS)v=PARAM_MAX_NS;
       v=Math.floor(v);
 
       params[idx].currentValue=v;
@@ -1938,11 +1941,16 @@ async function actDownload(){
       return;
     }
     let v=Number(p.currentValue);
-    if(!Number.isFinite(v)||v<0||v>65535){
-      showToast('参数值必须在 0~65535',1800);
+    if(!Number.isFinite(v)||v<0||v>PARAM_MAX_NS){
+      showToast('参数值必须在 0~'+PARAM_MAX_NS+' ns',1800);
       return;
     }
-    pairs.push(addr+':'+Math.floor(v));
+    v=Math.floor(v);
+    if(v%PARAM_TIME_BASE_NS!==0){
+      showToast('参数值必须是 '+PARAM_TIME_BASE_NS+'ns 的整数倍',1800);
+      return;
+    }
+    pairs.push(addr+':'+v);
   }
   try{
     setParamBusy(true);

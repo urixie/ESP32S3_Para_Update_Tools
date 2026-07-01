@@ -3,6 +3,7 @@ dist/
 build/
 target/
 release/*.exe
+release/test-bin/
 .env
 npm-debug.log*
 yarn-debug.log*

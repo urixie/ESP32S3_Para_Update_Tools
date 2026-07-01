@@ -17,7 +17,7 @@ fn build_sample() -> Vec<Parameter> {
         .map(|i| Parameter {
             address: i as u8,
             name: format!("母线参数 {}", i),
-            default_value: (i as u16) * 10,
+            default_value: (i as u32) * 10,
             param_type: if i % 2 == 0 {
                 ParamType::Control
             } else {
@@ -121,9 +121,9 @@ fn empty_name_rejected() {
 fn default_value_boundaries_ok() {
     let mut params = build_sample();
     params[0].default_value = 0;
-    params[1].default_value = 65535;
+    params[1].default_value = u32::MAX;
     let errors = validate_parameters(&params);
-    assert!(errors.is_empty(), "0 and 65535 must be valid: {:?}", errors);
+    assert!(errors.is_empty(), "0 and u32::MAX must be valid: {:?}", errors);
 }
 
 #[test]

@@ -23,7 +23,7 @@
 #define PARAM_BIN_PAYLOAD_MAGIC "UPLD"
 #define PARAM_BIN_PAYLOAD_HEADER_LEN 20
 #define PARAM_BIN_RECORD_SIZE 12
-#define PARAM_BIN_SCHEMA_VERSION 2
+#define PARAM_BIN_SCHEMA_VERSION 3
 #define PARAM_BIN_ADDR_MAX 71
 
 static const char *TAG = "param_bin";
@@ -47,6 +47,14 @@ static void set_err(char *err_msg, size_t err_msg_size, const char *msg)
 static uint16_t read_le16(const uint8_t *p)
 {
     return (uint16_t)p[0] | ((uint16_t)p[1] << 8);
+}
+
+static uint32_t read_le32(const uint8_t *p)
+{
+    return (uint32_t)p[0] |
+           ((uint32_t)p[1] << 8) |
+           ((uint32_t)p[2] << 16) |
+           ((uint32_t)p[3] << 24);
 }
 
 static void hex_encode_12(const uint8_t *bytes, char out[APP_PARAM_BIN_NONCE_HEX_LEN + 1])
@@ -244,9 +252,9 @@ static esp_err_t decode_payload(const uint8_t *payload, size_t payload_len,
         uint8_t address = r[0];
         uint8_t type = r[1];
         uint8_t permission = r[2];
-        uint16_t default_value = read_le16(r + 4);
-        uint16_t name_offset = read_le16(r + 6);
-        uint16_t name_len = read_le16(r + 8);
+        uint32_t default_value = read_le32(r + 4);
+        uint16_t name_offset = read_le16(r + 8);
+        uint16_t name_len = read_le16(r + 10);
 
         if (address > PARAM_BIN_ADDR_MAX) {
             set_err(err_msg, err_msg_size, "参数地址超出 0~71");

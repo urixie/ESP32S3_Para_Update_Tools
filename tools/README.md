@@ -25,7 +25,7 @@
 - 参数字段：
   - 名称：中文，最多 20 个字符
   - 地址：固定 0~71，不允许增删
-  - 默认值：`u16`，范围 `0~65535`
+  - 默认值：`u32`，范围 `0~4294967295`
   - 类型：控制 / 保护
   - 权限：可见 / 隐藏
 - 支持工程文件保存与加载
@@ -215,7 +215,7 @@ Payload 在加密前使用固定二进制结构：
 | 偏移 | 字段 | 类型 | 大小 | 说明 |
 |---:|---|---|---:|---|
 | 0 | payload_magic | `[u8; 4]` | 4 | 固定 `UPLD` |
-| 4 | schema_version | u16 | 2 | 当前固定为 `1` |
+| 4 | schema_version | u16 | 2 | 当前固定为 `3` |
 | 6 | param_count | u8 | 1 | 固定 72 |
 | 7 | record_size | u8 | 1 | 固定 12 |
 | 8 | name_table_len | u16 | 2 | 中文名称表长度 |
@@ -232,10 +232,9 @@ Payload 在加密前使用固定二进制结构：
 | 1 | param_type | u8 | 1 | 0=控制，1=保护 |
 | 2 | permission | u8 | 1 | 0=隐藏，1=可见 |
 | 3 | reserved0 | u8 | 1 | 填 0 |
-| 4 | default_value | u16 | 2 | 默认值 |
-| 6 | name_offset | u16 | 2 | 名称表偏移 |
-| 8 | name_len | u16 | 2 | 名称 UTF-8 字节长度 |
-| 10 | reserved1 | u16 | 2 | 填 0 |
+| 4 | default_value | u32 | 4 | 默认值 |
+| 8 | name_offset | u16 | 2 | 名称表偏移 |
+| 10 | name_len | u16 | 2 | 名称 UTF-8 字节长度 |
 
 72 个参数记录大小：
 
@@ -353,7 +352,7 @@ ESP32 解析流程：
 8. 解密失败则拒绝加载
 9. 解密成功后解析 Payload Header
 10. 检查 payload_magic == UPLD
-11. 检查 schema_version == 1
+11. 检查 schema_version == 3
 12. 检查 param_count == 72
 13. 检查 record_size == 12
 14. 解析 72 个 Parameter Record
@@ -378,7 +377,7 @@ typedef enum {
 
 typedef struct {
     uint8_t address;
-    uint16_t default_value;
+    uint32_t default_value;
     param_type_t type;
     param_permission_t permission;
     const char *name;
@@ -500,7 +499,7 @@ Header 作为 AAD
 [ ] 工程自动包含 72 个参数
 [ ] 参数地址固定为 0~71
 [ ] 可以编辑中文名称
-[ ] 可以编辑默认值 0~65535
+[ ] 可以编辑默认值 0~4294967295
 [ ] 可以选择控制/保护
 [ ] 可以选择可见/隐藏
 [ ] 可以保存 .ueproj.json

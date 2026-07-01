@@ -146,6 +146,11 @@ button {
   min-height: 0;
 }
 
+.builder-panel .page-workspace,
+.parser-panel .page-workspace {
+  grid-template-columns: 188px minmax(0, 1fr);
+}
+
 .page-side-panel {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
@@ -524,7 +529,7 @@ button {
 .param-table .col-value,
 .param-table th.col-value,
 .param-table td.value-cell {
-  width: 82px;
+  width: 112px;
 }
 
 .param-table .col-type,
@@ -1291,6 +1296,11 @@ button {
 
   .page-workspace,
   .about-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .builder-panel .page-workspace,
+  .parser-panel .page-workspace {
     grid-template-columns: 1fr;
   }
 

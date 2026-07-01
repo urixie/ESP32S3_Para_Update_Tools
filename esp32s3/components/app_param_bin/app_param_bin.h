@@ -26,7 +26,7 @@ typedef enum {
 
 typedef struct {
     uint8_t address;
-    uint16_t default_value;
+    uint32_t default_value;
     app_param_bin_type_t param_type;
     app_param_bin_permission_t permission;
     char name[APP_PARAM_BIN_NAME_MAX_BYTES + 1];

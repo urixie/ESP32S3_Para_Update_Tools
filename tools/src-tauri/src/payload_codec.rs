@@ -28,9 +28,9 @@ pub const PAYLOAD_MAGIC: &[u8; 4] = b"UPLD";
 pub const PAYLOAD_HEADER_LEN: usize = 20;
 /// Each Parameter Record is exactly 12 bytes.
 pub const RECORD_SIZE: u8 = 12;
-/// Payload schema version. v2 adds encrypted board_name metadata and does not
-/// keep compatibility with v1 bins.
-pub const SCHEMA_VERSION: u16 = 2;
+/// Payload schema version. v3 stores default_value as u32 while keeping the
+/// 12-byte record size by consuming the old reserved1 field.
+pub const SCHEMA_VERSION: u16 = 3;
 
 fn validate_board_name(board_name: &str) -> Result<&str, AppError> {
     let trimmed = board_name.trim();
@@ -110,10 +110,9 @@ pub fn encode_payload(board_name: &str, parameters: &[Parameter]) -> Result<Vec<
         out.write_u8(p.param_type.to_byte()).unwrap();
         out.write_u8(p.permission.to_byte()).unwrap();
         out.write_u8(0).unwrap(); // reserved0
-        out.write_u16::<LittleEndian>(p.default_value).unwrap();
+        out.write_u32::<LittleEndian>(p.default_value).unwrap();
         out.write_u16::<LittleEndian>(name_offset).unwrap();
         out.write_u16::<LittleEndian>(name_len).unwrap();
-        out.write_u16::<LittleEndian>(0).unwrap(); // reserved1
     }
 
     // --- Step 4: append encrypted board name and parameter names ---
@@ -202,10 +201,9 @@ pub fn decode_payload(payload: &[u8]) -> Result<(String, Vec<Parameter>), AppErr
             .ok_or(AppError::InvalidPermission(address))?;
 
         let _reserved0 = cur.read_u8().map_err(|_| AppError::PayloadTooShort)?;
-        let default_value = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
+        let default_value = cur.read_u32::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
         let name_offset = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)? as usize;
         let name_len = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)? as usize;
-        let _reserved1 = cur.read_u16::<LittleEndian>().map_err(|_| AppError::PayloadTooShort)?;
 
         if name_offset
             .checked_add(name_len)

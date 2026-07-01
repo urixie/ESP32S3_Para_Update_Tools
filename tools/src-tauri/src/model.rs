@@ -87,7 +87,7 @@ impl ParamPermission {
 pub struct Parameter {
     pub address: u8,
     pub name: String,
-    pub default_value: u16,
+    pub default_value: u32,
     /// Renamed from `param_type` so it does not collide with the reserved
     /// `type` keyword on the JS side. Frontend uses `paramType`.
     #[serde(rename = "paramType")]

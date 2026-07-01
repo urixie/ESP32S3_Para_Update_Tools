@@ -22,10 +22,12 @@ interface ParamTableProps {
   indexOffset?: number;
 }
 
-const clampU16 = (v: number): number => {
+const DEFAULT_VALUE_MAX = 0xffffffff;
+
+const clampU32 = (v: number): number => {
   if (Number.isNaN(v)) return 0;
   if (v < 0) return 0;
-  if (v > 65535) return 65535;
+  if (v > DEFAULT_VALUE_MAX) return DEFAULT_VALUE_MAX;
   return Math.floor(v);
 };
 
@@ -59,7 +61,7 @@ export const ParamTable: React.FC<ParamTableProps> = ({
             <tr>
               <th className="col-address">地址</th>
               <th className="col-name">名称</th>
-              <th className="col-value">默认值</th>
+              <th className="col-value">默认值(ns)</th>
               <th className="col-type">类型</th>
               <th className="col-permission">权限</th>
             </tr>
@@ -94,10 +96,10 @@ export const ParamTable: React.FC<ParamTableProps> = ({
                       className={`value-input compact-number ${fieldClass}`}
                       type="number"
                       min={0}
-                      max={65535}
+                      max={DEFAULT_VALUE_MAX}
                       value={param.defaultValue}
                       onChange={(e) =>
-                        emitChange(index, { defaultValue: clampU16(Number(e.target.value)) })
+                        emitChange(index, { defaultValue: clampU32(Number(e.target.value)) })
                       }
                       readOnly={readonly}
                       disabled={readonly}

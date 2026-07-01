@@ -28,6 +28,8 @@
 #define APP_WEB_IO_BUF_SIZE 2048
 #define APP_WEB_UPLOAD_BUF_SIZE 4096
 #define APP_WEB_PARAM_FORM_BUF_SIZE 1536
+#define APP_WEB_PARAM_TIME_BASE_NS 50U
+#define APP_WEB_PARAM_MAX_NS_VALUE ((uint32_t)UINT16_MAX * APP_WEB_PARAM_TIME_BASE_NS)
 #define WEB_AUTH_USER "admin"
 #define WEB_AUTH_PASS "admin"
 #define WEB_AUTH_SESSION_BYTES 32
@@ -974,21 +976,70 @@ static void send_visible_param_json(httpd_req_t *req, const app_param_bin_parame
     httpd_resp_sendstr_chunk(req, buf);
     json_escape_send(req, p->name);
     snprintf(buf, sizeof(buf),
-             "\",\"address\":%u,\"defaultValue\":%u,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\"}",
+             "\",\"address\":%u,\"defaultValue\":%lu,\"paramType\":\"%s\",\"paramTypeLabel\":\"%s\"}",
              p->address,
-             p->default_value,
+             (unsigned long)p->default_value,
              app_param_bin_type_name(p->param_type),
              app_param_bin_type_label(p->param_type));
     httpd_resp_sendstr_chunk(req, buf);
 }
 
-static void build_param_defaults(const app_param_bin_result_t *parsed, uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT])
+static esp_err_t param_ns_to_board_tick(uint32_t value_ns,
+                                        uint16_t *out_tick,
+                                        char *err_msg,
+                                        size_t err_msg_size)
 {
-    memset(defaults, 0, sizeof(uint16_t) * APP_PARAM_BIN_PARAM_COUNT);
+    if (value_ns > APP_WEB_PARAM_MAX_NS_VALUE) {
+        snprintf(err_msg, err_msg_size, "参数值必须在 0~%lu ns",
+                 (unsigned long)APP_WEB_PARAM_MAX_NS_VALUE);
+        return ESP_ERR_INVALID_ARG;
+    }
+    if ((value_ns % APP_WEB_PARAM_TIME_BASE_NS) != 0) {
+        snprintf(err_msg, err_msg_size, "参数值必须是 %u ns 的整数倍",
+                 (unsigned int)APP_WEB_PARAM_TIME_BASE_NS);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint32_t tick = value_ns / APP_WEB_PARAM_TIME_BASE_NS;
+    if (tick > UINT16_MAX) {
+        snprintf(err_msg, err_msg_size, "参数值超过板卡存储范围");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *out_tick = (uint16_t)tick;
+    return ESP_OK;
+}
+
+static esp_err_t param_ns_values_to_board_ticks(const uint32_t values_ns[APP_PARAM_BIN_PARAM_COUNT],
+                                                uint16_t board_values[APP_PARAM_BIN_PARAM_COUNT],
+                                                char *err_msg,
+                                                size_t err_msg_size)
+{
+    for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
+        esp_err_t ret = param_ns_to_board_tick(values_ns[i], &board_values[i], err_msg, err_msg_size);
+        if (ret != ESP_OK) {
+            char detail[160];
+            snprintf(detail, sizeof(detail), "参数地址 %u：%s", (unsigned int)i,
+                     err_msg != NULL && err_msg[0] != '\0' ? err_msg : "参数值无效");
+            snprintf(err_msg, err_msg_size, "%s", detail);
+            return ret;
+        }
+    }
+    return ESP_OK;
+}
+
+static uint32_t param_board_tick_to_ns(uint16_t value)
+{
+    return (uint32_t)value * APP_WEB_PARAM_TIME_BASE_NS;
+}
+
+static void build_param_defaults_ns(const app_param_bin_result_t *parsed, uint32_t defaults_ns[APP_PARAM_BIN_PARAM_COUNT])
+{
+    memset(defaults_ns, 0, sizeof(uint32_t) * APP_PARAM_BIN_PARAM_COUNT);
     for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
         const app_param_bin_parameter_t *p = &parsed->parameters[i];
         if (p->address < APP_PARAM_BIN_PARAM_COUNT) {
-            defaults[p->address] = p->default_value;
+            defaults_ns[p->address] = p->default_value;
         }
     }
 }
@@ -1007,7 +1058,7 @@ static bool param_address_is_visible(const app_param_bin_result_t *parsed, uint8
 static esp_err_t parse_param_values(const char *text,
                                     const app_param_bin_result_t *parsed,
                                     bool provided[APP_PARAM_BIN_PARAM_COUNT],
-                                    uint16_t values[APP_PARAM_BIN_PARAM_COUNT],
+                                    uint32_t values_ns[APP_PARAM_BIN_PARAM_COUNT],
                                     char *err_msg,
                                     size_t err_msg_size)
 {
@@ -1039,16 +1090,21 @@ static esp_err_t parse_param_values(const char *text,
             return ESP_ERR_INVALID_ARG;
         }
         unsigned long value = strtoul(sep + 1, &end, 10);
-        if (end == sep + 1 || *end != '\0' || value > 65535UL) {
+        if (end == sep + 1 || *end != '\0' || value > APP_WEB_PARAM_MAX_NS_VALUE) {
             snprintf(err_msg, err_msg_size, "参数值无效");
             return ESP_ERR_INVALID_ARG;
+        }
+        uint16_t unused_tick = 0;
+        esp_err_t ret = param_ns_to_board_tick((uint32_t)value, &unused_tick, err_msg, err_msg_size);
+        if (ret != ESP_OK) {
+            return ret;
         }
         if (!param_address_is_visible(parsed, (uint8_t)addr)) {
             snprintf(err_msg, err_msg_size, "参数地址未授权");
             return ESP_ERR_INVALID_ARG;
         }
         provided[addr] = true;
-        values[addr] = (uint16_t)value;
+        values_ns[addr] = (uint32_t)value;
         token = strtok_r(NULL, ",", &saveptr);
     }
 
@@ -1232,9 +1288,10 @@ static esp_err_t send_param_board_status_json(httpd_req_t *req,
             if (p->permission != APP_PARAM_BIN_PERMISSION_VISIBLE || p->address >= APP_PARAM_BOARD_PARAM_COUNT) {
                 continue;
             }
-            char item[64];
-            snprintf(item, sizeof(item), "%s{\"address\":%u,\"value\":%u}",
-                     first ? "" : ",", p->address, status->values[p->address]);
+            uint32_t value_ns = param_board_tick_to_ns(status->values[p->address]);
+            char item[80];
+            snprintf(item, sizeof(item), "%s{\"address\":%u,\"value\":%lu}",
+                     first ? "" : ",", p->address, (unsigned long)value_ns);
             httpd_resp_sendstr_chunk(req, item);
             first = false;
         }
@@ -1269,10 +1326,17 @@ static esp_err_t param_readback_handler(httpd_req_t *req)
                                err_msg[0] ? err_msg : "解析板卡配置失败");
     }
 
-    uint16_t defaults[APP_PARAM_BIN_PARAM_COUNT];
-    build_param_defaults(parsed, defaults);
+    uint32_t defaults_ns[APP_PARAM_BIN_PARAM_COUNT];
+    uint16_t board_defaults[APP_PARAM_BIN_PARAM_COUNT];
+    build_param_defaults_ns(parsed, defaults_ns);
+    ret = param_ns_values_to_board_ticks(defaults_ns, board_defaults, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        free(parsed);
+        return send_json_error(req, "422 Unprocessable Entity", err_msg[0] ? err_msg : "板卡配置默认值无效");
+    }
+
     uint32_t op_id = 0;
-    ret = app_param_board_start_read(defaults, &op_id, err_msg, sizeof(err_msg));
+    ret = app_param_board_start_read(board_defaults, &op_id, err_msg, sizeof(err_msg));
     free(parsed);
     if (ret != ESP_OK) {
         return send_json_error(req,
@@ -1373,30 +1437,39 @@ static esp_err_t param_download_handler(httpd_req_t *req)
     }
 
     bool provided[APP_PARAM_BIN_PARAM_COUNT] = {0};
-    uint16_t submitted[APP_PARAM_BIN_PARAM_COUNT] = {0};
-    ret = parse_param_values(values_text, parsed, provided, submitted, err_msg, sizeof(err_msg));
+    uint32_t submitted_ns[APP_PARAM_BIN_PARAM_COUNT] = {0};
+    ret = parse_param_values(values_text, parsed, provided, submitted_ns, err_msg, sizeof(err_msg));
     if (ret != ESP_OK) {
         free(parsed);
         return send_json_error(req, "400 Bad Request", err_msg[0] ? err_msg : "参数值无效");
     }
 
-    uint16_t values[APP_PARAM_BIN_PARAM_COUNT];
+    uint32_t values_ns[APP_PARAM_BIN_PARAM_COUNT];
     /*
      * 参数下载以加密 bin 中的 72 项默认值作为基础镜像：
+     * - 网页和加密 bin 中的参数单位为 ns；
      * - 隐藏参数不会从网页提交，保持加密 bin 默认值；
-     * - 可见参数通过网页提交值覆盖对应 address；
+     * - 可见参数通过网页提交 ns 值覆盖对应 address；
+     * - 最终写入板卡前统一换算为 50ns tick；
      * - 不再通过回读值保留隐藏参数，避免隐藏参数被旧板卡状态污染。
      */
-    build_param_defaults(parsed, values);
+    build_param_defaults_ns(parsed, values_ns);
 
     for (size_t i = 0; i < APP_PARAM_BIN_PARAM_COUNT; i++) {
         if (provided[i]) {
-            values[i] = submitted[i];
+            values_ns[i] = submitted_ns[i];
         }
     }
 
+    uint16_t board_values[APP_PARAM_BIN_PARAM_COUNT];
+    ret = param_ns_values_to_board_ticks(values_ns, board_values, err_msg, sizeof(err_msg));
+    if (ret != ESP_OK) {
+        free(parsed);
+        return send_json_error(req, "400 Bad Request", err_msg[0] ? err_msg : "参数值无效");
+    }
+
     uint32_t op_id = 0;
-    ret = app_param_board_start_write(values, &op_id, err_msg, sizeof(err_msg));
+    ret = app_param_board_start_write(board_values, &op_id, err_msg, sizeof(err_msg));
     free(parsed);
     if (ret != ESP_OK) {
         return send_json_error(req,
