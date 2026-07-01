@@ -6,6 +6,42 @@
 <title>参数后台登录</title>
 <style>
 :root{color-scheme:dark;--bg:#06110E;--card:#0D1F1A;--line:#1E3A34;--line2:#2B5A4E;--text:#F2FFF9;--muted:#8FAFA4;--green:#00C853;--blue:#00A650;--gold:#F5B301;--cyan:#21D4FD;--shadow:0 24px 80px rgba(0,0,0,.42)}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px;background:linear-gradient(rgba(33,212,253,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,83,.035) 1px,transparent 1px),radial-gradient(circle at 16% -10%,rgba(0,166,80,.18),transparent 34%),radial-gradient(circle at 88% 4%,rgba(33,212,253,.12),transparent 30%),linear-gradient(180deg,#06110E 0%,#071713 48%,#050D0B 100%);background-size:34px 34px,34px 34px,auto,auto,auto;color:var(--text);font-family:Arial,'Microsoft YaHei',sans-serif}.card{width:min(420px,100%);padding:30px;border:1px solid rgba(43,90,78,.68);border-radius:16px;background:linear-gradient(180deg,rgba(13,31,26,.97),rgba(7,19,16,.98));box-shadow:var(--shadow),inset 0 1px 0 rgba(242,255,249,.04)}.brand{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid rgba(43,90,78,.72)}.logo{display:flex;align-items:center;justify-content:center;height:40px;filter:drop-shadow(0 6px 18px rgba(0,200,83,.25))}.logo svg{display:block;height:100%;width:auto}.logo .logo-main{fill:var(--text);fill-rule:evenodd}.logo .logo-accent{fill:var(--green)}.logo .logo-glow{fill:rgba(255,255,255,.08)}h1{margin:0;font-size:24px;line-height:1.2;letter-spacing:0}.sub{margin:3px 0 0;color:var(--muted)}.field{display:grid;gap:8px;margin:15px 0}label{font-size:14px;color:#CDEDE2;font-weight:700}input{width:100%;padding:13px 14px;border:1px solid rgba(43,90,78,.9);border-radius:8px;background:linear-gradient(180deg,#071713,#06110E);color:var(--text);outline:0;box-shadow:inset 0 1px 0 rgba(242,255,249,.05),inset 0 0 0 1px rgba(0,200,83,.04)}input:hover{border-color:rgba(33,212,253,.56)}input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,200,83,.18),0 0 20px rgba(33,212,253,.08),inset 0 0 0 1px rgba(0,200,83,.12)}button{width:100%;margin-top:10px;padding:13px;border:1px solid rgba(0,200,83,.95);border-radius:8px;background:linear-gradient(180deg,#00C853,#008D46);color:#F6FFF9;font-weight:800;letter-spacing:.4px;cursor:pointer;box-shadow:0 0 0 1px rgba(0,200,83,.28),0 16px 32px rgba(0,85,42,.34)}button:hover{background:linear-gradient(180deg,#16D966,#00A650);border-color:#48F28B}.msg{min-height:22px;margin-top:14px;color:var(--gold);line-height:1.45}.tip{margin-top:14px;color:var(--muted);font-size:13px;line-height:1.5}.pill{display:inline-flex;padding:2px 8px;border:1px solid rgba(245,179,1,.32);border-radius:999px;color:var(--gold);background:rgba(245,179,1,.08)}@media(max-width:520px){.card{padding:24px}.brand{display:grid;justify-items:center;text-align:center}h1{font-size:22px}}
+
+/* Transmission tower watermark: inline SVG, no extra route or asset file. */
+body {
+  position: relative;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at 82% 18%, rgba(0, 200, 83, .16), transparent 31%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 720'%3E%3Cg fill='none' stroke='%23BFEADC' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='.82'%3E%3Cpath d='M260 42 L214 128 L306 128 Z M260 42 L260 704 M214 128 L140 704 M306 128 L380 704'/%3E%3Cpath d='M96 190 L424 190 L330 146 L190 146 Z M70 328 L450 328 L350 286 L170 286 Z M112 476 L408 476 L332 438 L188 438 Z'/%3E%3Cpath d='M190 146 L330 190 M330 146 L190 190 M170 286 L350 328 M350 286 L170 328 M188 438 L332 476 M332 438 L188 476'/%3E%3Cpath d='M180 190 L342 704 M340 190 L178 704 M160 300 L360 560 M360 300 L160 560 M146 400 L374 620 M374 400 L146 620'/%3E%3Cpath d='M222 246 H298 M208 330 H312 M194 420 H326 M178 520 H342 M160 620 H360'/%3E%3Cpath d='M0 172 C72 186 126 198 190 190 M330 190 C398 184 462 172 520 154 M0 310 C64 324 120 333 170 328 M350 328 C412 320 468 306 520 286 M0 458 C70 472 126 482 188 476 M332 476 C402 468 468 450 520 430'/%3E%3Cpath d='M102 190 C116 218 138 222 154 194 M418 190 C404 218 382 222 366 194 M80 328 C98 360 126 364 146 332 M440 328 C422 360 394 364 374 332 M122 476 C138 506 164 510 184 480 M398 476 C382 506 356 510 336 480'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: 82% 18%, right -8vw bottom -10vh;
+  background-size: 42vw auto, min(1120px, 68vw) min(980px, 96vh);
+  opacity: .16;
+  filter: blur(.25px);
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+}
+
+@media(max-width:520px) {
+  body::before {
+    background-position: 86% 10%, right -38vw bottom -16vh;
+    background-size: 68vw auto, min(700px, 112vw) min(760px, 84vh);
+    opacity: .12;
+  }
+}
 </style>
 </head>
 <body>

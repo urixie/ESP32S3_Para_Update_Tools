@@ -1248,6 +1248,50 @@ th,
   }
 }
 
+/* Transmission tower watermark: inline SVG only, kept behind all app content. */
+body {
+  position: relative;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at 84% 22%, rgba(0, 200, 83, .10), transparent 30%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 720'%3E%3Cg fill='none' stroke='%23BFEADC' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='.82'%3E%3Cpath d='M260 42 L214 128 L306 128 Z M260 42 L260 704 M214 128 L140 704 M306 128 L380 704'/%3E%3Cpath d='M96 190 L424 190 L330 146 L190 146 Z M70 328 L450 328 L350 286 L170 286 Z M112 476 L408 476 L332 438 L188 438 Z'/%3E%3Cpath d='M190 146 L330 190 M330 146 L190 190 M170 286 L350 328 M350 286 L170 328 M188 438 L332 476 M332 438 L188 476'/%3E%3Cpath d='M180 190 L342 704 M340 190 L178 704 M160 300 L360 560 M360 300 L160 560 M146 400 L374 620 M374 400 L146 620'/%3E%3Cpath d='M222 246 H298 M208 330 H312 M194 420 H326 M178 520 H342 M160 620 H360'/%3E%3Cpath d='M0 172 C72 186 126 198 190 190 M330 190 C398 184 462 172 520 154 M0 310 C64 324 120 333 170 328 M350 328 C412 320 468 306 520 286 M0 458 C70 472 126 482 188 476 M332 476 C402 468 468 450 520 430'/%3E%3Cpath d='M102 190 C116 218 138 222 154 194 M418 190 C404 218 382 222 366 194 M80 328 C98 360 126 364 146 332 M440 328 C422 360 394 364 374 332 M122 476 C138 506 164 510 184 480 M398 476 C382 506 356 510 336 480'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: 84% 20%, right -9vw bottom -18vh;
+  background-size: 32vw auto, min(940px, 58vw) min(860px, 88vh);
+  opacity: .09;
+  filter: blur(.2px);
+}
+
+.root {
+  position: relative;
+  z-index: 1;
+}
+
+.toast {
+  z-index: 9999;
+}
+
+.about-backdrop {
+  z-index: 9998;
+}
+
+@media (max-width: 900px) {
+  body::before {
+    background-position: 86% 10%, right -44vw bottom -18vh;
+    background-size: 58vw auto, min(620px, 108vw) min(720px, 82vh);
+    opacity: .07;
+  }
+}
+
 </style>
 </head>
 <body>
