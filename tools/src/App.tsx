@@ -42,7 +42,7 @@ const App: React.FC = () => {
           </button>
 
           <button
-            className={view === 'about' ? 'active' : ''}
+            className={`about-nav-button ${view === 'about' ? 'active' : ''}`}
             onClick={() => setView('about')}
           >
             关于
