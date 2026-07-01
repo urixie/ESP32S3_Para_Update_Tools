@@ -70,6 +70,75 @@ ESP32 端校验规则：
 
 > 量产前必须将当前演示密钥替换为正式的 32 字节随机密钥，并确保 PC tools 与 ESP32-S3 固件使用完全相同的 key。该 key 不会写入 `.bin` 文件，只存在于导出工具和固件代码中。
 
+### PC tools 加密导出流程
+
+```mermaid
+flowchart TD
+    A[开始导出参数 bin] --> B[读取板卡名称和 72 条参数]
+    B --> C{参数基础校验}
+    C -- 不通过 --> C1[停止导出并返回校验错误]
+    C -- 通过 --> D[构建参数名称表]
+    D --> E[生成 Payload Header]
+    E --> F[写入 72 条 Parameter Record]
+    F --> G[追加 Board Name]
+    G --> H[追加 Parameter Name Table]
+    H --> I[得到 Payload 明文]
+    I --> J[生成随机 12 字节 Nonce]
+    J --> K[构建 17 字节 Header]
+    K --> L[使用 PRODUCT_KEY 执行 AES-256-GCM 加密]
+    L --> M[Header 作为 AAD 参与认证]
+    M --> N[输出 Ciphertext 和 16 字节 Tag]
+    N --> O[拼接 Header + Ciphertext + Tag]
+    O --> P[写入 .bin 文件]
+```
+
+导出阶段的关键点：
+
+- `Header` 明文写入 `.bin` 文件头，用于识别格式、版本和 Nonce。
+- `Header` 同时作为 AES-GCM 的 AAD，因此 Header 被篡改后无法通过认证。
+- `Board Name`、72 条参数记录和参数名称表都在 Payload 内，均会被加密。
+- `Tag` 是认证标签，不是额外明文数据；ESP32-S3 解密时必须校验通过才能使用 Payload。
+
+### ESP32-S3 解密解析流程
+
+```mermaid
+flowchart TD
+    A[Web 点击或接口请求解析 .bin] --> B[读取整个 .bin 文件]
+    B --> C{文件大小是否至少 33 字节}
+    C -- 否 --> C1[拒绝解析: 文件过小]
+    C -- 是 --> D[读取 17 字节 Header]
+    D --> E{magic 是否为 UEPB}
+    E -- 否 --> E1[拒绝解析: magic 错误]
+    E -- 是 --> F{format_version 是否为 1}
+    F -- 否 --> F1[拒绝解析: 格式版本不支持]
+    F -- 是 --> G[从 Header 提取 12 字节 Nonce]
+    G --> H[拆分 Ciphertext 和最后 16 字节 Tag]
+    H --> I[使用 s_product_key 执行 AES-256-GCM 认证解密]
+    I --> J[Header 作为 AAD 参与认证]
+    J --> K{Tag 认证是否通过}
+    K -- 否 --> K1[拒绝解析: 密钥不匹配或文件被篡改]
+    K -- 是 --> L[得到 Payload 明文]
+    L --> M{Payload magic 是否为 UPLD}
+    M -- 否 --> M1[拒绝解析: Payload magic 错误]
+    M -- 是 --> N{schema 是否为 2}
+    N -- 否 --> N1[拒绝解析: schema 不支持]
+    N -- 是 --> O{参数数量 72 且记录长度 12}
+    O -- 否 --> O1[拒绝解析: Payload 结构错误]
+    O -- 是 --> P[解析 Board Name]
+    P --> Q[逐条解析 72 条 Parameter Record]
+    Q --> R{地址 类型 权限 名称偏移是否合法}
+    R -- 否 --> R1[拒绝解析: 参数记录非法]
+    R -- 是 --> S[从名称表恢复参数名称]
+    S --> T[返回 Header 信息 板卡名称 72 条参数]
+```
+
+解密阶段的关键点：
+
+- ESP32-S3 不会在认证失败时继续解析 Payload。
+- AES-GCM 认证失败通常表示 key 不一致、Header 被改动、密文被改动或 tag 被改动。
+- 只有通过 Header 校验、AES-GCM 认证和 Payload 结构校验后，Web 页面才会显示参数。
+- 隐藏参数仍存在于加密 Payload 中，但 Web 展示和下载逻辑会按 `permission` 区分可见与隐藏。
+
 ### 加密 Payload 明文结构
 
 AES-GCM 解密成功后得到 Payload 明文。当前 Payload schema 为 `2`，所有多字节整数均为 Little-Endian：
