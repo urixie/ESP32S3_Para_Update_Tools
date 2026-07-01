@@ -463,7 +463,7 @@ button {
  * padding, so the gaps between address, name, value, type and permission stay
  * visually uniform in both left and right tables.
  *
- * The name column is widened for 30-character parameter names while keeping
+ * The name column is sized for 20-character parameter names while keeping
  * the rest of the columns compact.
  */
 .param-table {
@@ -509,7 +509,7 @@ button {
 .param-table .col-name,
 .param-table th.col-name,
 .param-table td.name-cell {
-  width: 246px;
+  width: 184px;
 }
 
 .param-table .col-value,

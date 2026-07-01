@@ -69,7 +69,7 @@ pub fn validate_parameters(parameters: &[Parameter]) -> Vec<ValidationError> {
             continue;
         }
 
-        // 3b. Unicode char count limit (business rule, max 30 chars).
+        // 3b. Unicode char count limit (business rule, max 20 chars).
         let char_len = p.name.chars().count();
         if char_len > NAME_MAX_CHARS {
             errors.push(ValidationError {

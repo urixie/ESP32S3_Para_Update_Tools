@@ -43,7 +43,7 @@ export const ADDR_MIN = 0;
 export const ADDR_MAX = 71;
 export const BOARD_NAME_MAX_CHARS = 32;
 export const BOARD_NAME_MAX_BYTES = 96;
-export const NAME_MAX_CHARS = 30;
+export const NAME_MAX_CHARS = 20;
 export const NAME_MAX_BYTES = 96;
 
 /**

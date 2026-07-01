@@ -230,45 +230,45 @@ fn export_directly_rejects_missing_address() {
 }
 
 #[test]
-fn name_30_chinese_chars_ok() {
+fn name_20_chinese_chars_ok() {
     let mut params = build_sample();
-    params[0].name = "参".repeat(30);
-    assert_eq!(params[0].name.chars().count(), 30);
+    params[0].name = "参".repeat(20);
+    assert_eq!(params[0].name.chars().count(), 20);
     assert!(params[0].name.as_bytes().len() <= 96);
     let errors = crate::validator::validate_parameters(&params);
     assert!(
         errors.is_empty(),
-        "30 Chinese chars should be valid, got {:?}",
+        "20 Chinese chars should be valid, got {:?}",
         errors
     );
 }
 
 #[test]
-fn name_31_chinese_chars_rejected() {
+fn name_21_chinese_chars_rejected() {
     let mut params = build_sample();
-    params[0].name = "参".repeat(31);
-    assert_eq!(params[0].name.chars().count(), 31);
+    params[0].name = "参".repeat(21);
+    assert_eq!(params[0].name.chars().count(), 21);
     assert!(params[0].name.as_bytes().len() <= 96);
     let errors = crate::validator::validate_parameters(&params);
     assert!(
         !errors.is_empty(),
-        "31 Chinese chars must be rejected by validation"
+        "21 Chinese chars must be rejected by validation"
     );
     assert!(
         errors
             .iter()
-            .any(|e| e.field.as_deref() == Some("name") && e.message.contains("30")),
-        "error must mention the 30-char limit, got {:?}",
+            .any(|e| e.field.as_deref() == Some("name") && e.message.contains("20")),
+        "error must mention the 20-char limit, got {:?}",
         errors
     );
 }
 
 #[test]
-fn export_rejects_31_chinese_chars() {
+fn export_rejects_21_chinese_chars() {
     let mut params = build_sample();
-    params[0].name = "参".repeat(31);
+    params[0].name = "参".repeat(21);
     let result = export_encrypted_bin_bytes(SAMPLE_BOARD_NAME, &params);
-    assert!(result.is_err(), "export must reject names longer than 30 chars");
+    assert!(result.is_err(), "export must reject names longer than 20 chars");
 }
 
 #[test]

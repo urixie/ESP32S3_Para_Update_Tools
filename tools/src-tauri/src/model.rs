@@ -15,7 +15,7 @@ pub const BOARD_NAME_MAX_CHARS: usize = 32;
 pub const BOARD_NAME_MAX_BYTES: usize = 96;
 
 /// Maximum length of a parameter name in Unicode characters.
-pub const NAME_MAX_CHARS: usize = 30;
+pub const NAME_MAX_CHARS: usize = 20;
 
 /// Maximum length of a UTF-8 encoded parameter name in bytes. This is the
 /// protocol-level safety limit; `NAME_MAX_CHARS` is the user-facing limit
