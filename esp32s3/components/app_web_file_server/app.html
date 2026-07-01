@@ -396,17 +396,27 @@ td.name,
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(2, 8, 7, .72);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(0, 200, 83, .16), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(33, 212, 253, .12), transparent 30%),
+    rgba(2, 8, 7, .78);
   backdrop-filter: blur(8px);
 }
 
 .about-panel {
-  width: min(460px, 100%);
+  width: min(920px, 100%);
+  max-height: calc(100vh - 36px);
   border: 1px solid rgba(0, 200, 83, .48);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(14, 36, 30, .98), rgba(6, 17, 14, .98));
-  box-shadow: 0 24px 80px rgba(0, 0, 0, .46), inset 0 1px 0 rgba(242, 255, 249, .06);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(33, 212, 253, .028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 83, .028) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(14, 36, 30, .98), rgba(6, 17, 14, .98));
+  background-size: 26px 26px, 26px 26px, auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(242, 255, 249, .06);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .about-head {
@@ -416,12 +426,26 @@ td.name,
   gap: 12px;
   padding: 16px 18px 12px;
   border-bottom: 1px solid rgba(43, 90, 78, .7);
+  background: linear-gradient(180deg, rgba(16, 40, 32, .66), rgba(7, 23, 19, .22));
+}
+
+.about-title-wrap {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .about-head h2 {
   margin: 0;
   font-size: 20px;
   color: var(--text);
+  letter-spacing: .2px;
+}
+
+.about-subtitle {
+  color: #BFEADC;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .about-close {
@@ -433,37 +457,298 @@ td.name,
   border-radius: 8px;
   font-size: 20px;
   line-height: 1;
+  flex: 0 0 auto;
 }
 
 .about-body {
   display: grid;
-  gap: 12px;
-  padding: 16px 18px 18px;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.about-row {
+.about-menu {
+  border: 1px solid rgba(43, 90, 78, .72);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(13, 31, 26, .82), rgba(7, 23, 19, .64));
+  padding: 10px;
   display: grid;
-  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 8px;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.about-menu-title {
+  color: var(--cyan);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  padding: 2px 4px 4px;
+}
+
+.about-tab {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  text-align: left;
+  font-weight: 900;
+  color: #A6C7BC;
+  background: rgba(8, 24, 20, .34);
+  border-color: rgba(30, 58, 52, .78);
+  box-shadow: none;
+}
+
+.about-tab:hover {
+  color: #E8FFF6;
+  border-color: rgba(33, 212, 253, .42);
+  background: linear-gradient(180deg, rgba(20, 54, 45, .78), rgba(9, 27, 22, .88));
+}
+
+.about-tab.active {
+  color: var(--text);
+  border-color: rgba(0, 200, 83, .82);
+  background: linear-gradient(135deg, rgba(0, 166, 80, .32), rgba(33, 212, 253, .08));
+  box-shadow: inset 3px 0 0 var(--green), 0 10px 24px rgba(0, 55, 30, .22);
+}
+
+.about-tab-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--gold);
+  background: linear-gradient(180deg, #102820, #0A1D18);
+  border: 1px solid rgba(43, 90, 78, .7);
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.about-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.about-section {
+  display: grid;
   gap: 12px;
-  align-items: start;
+}
+
+.about-section[hidden] {
+  display: none;
+}
+
+.about-card {
+  border: 1px solid rgba(43, 90, 78, .72);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(13, 31, 26, .88), rgba(7, 23, 19, .70));
+  padding: 15px;
+  box-shadow: inset 0 1px 0 rgba(242, 255, 249, .04);
+}
+
+.about-card h3 {
+  margin: 0 0 8px;
+  color: #E8FFF6;
+  font-size: 17px;
+}
+
+.about-card p {
+  margin: 0;
+  color: #BFEADC;
+  line-height: 1.7;
+}
+
+.about-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.about-kpi {
+  border: 1px solid rgba(0, 200, 83, .32);
+  border-radius: 12px;
+  background: rgba(16, 40, 32, .58);
+  padding: 12px;
+}
+
+.about-kpi-value {
+  color: var(--gold);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.about-kpi-label {
+  margin-top: 4px;
+  color: #BFEADC;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.about-list,
+.about-steps,
+.about-meta {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 9px;
+}
+
+.about-list li,
+.about-steps li {
+  border: 1px solid rgba(43, 90, 78, .56);
+  border-radius: 10px;
+  background: rgba(8, 24, 20, .42);
+  padding: 10px 12px;
+  color: #DDFBF2;
+  line-height: 1.55;
+}
+
+.about-list li::before {
+  content: "✓";
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: rgba(0, 200, 83, .14);
+  color: #48F28B;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.about-steps {
+  counter-reset: step;
+}
+
+.about-steps li {
+  position: relative;
+  padding-left: 46px;
+}
+
+.about-steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 12px;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #00C853, #008D46);
+  color: #F6FFF9;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.about-meta li {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(43, 90, 78, .52);
+}
+
+.about-meta li:last-child {
+  border-bottom: 0;
 }
 
 .about-label {
   color: var(--gold);
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .about-value {
   color: #E8FFF6;
   line-height: 1.55;
+  word-break: break-all;
 }
 
 .about-note {
   margin-top: 2px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(43, 90, 78, .62);
-  color: #BFEADC;
-  line-height: 1.55;
+  padding: 12px;
+  border: 1px solid rgba(245, 179, 1, .24);
+  border-radius: 12px;
+  background: rgba(245, 179, 1, .08);
+  color: #FFEAB0;
+  line-height: 1.6;
+}
+
+.about-support-card {
+  display: grid;
+  gap: 10px;
+}
+
+.about-support-mail {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid rgba(33, 212, 253, .46);
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #DDF9FF;
+  background: rgba(33, 212, 253, .08);
+  font-weight: 900;
+  word-break: break-all;
+}
+
+@media (max-width: 760px) {
+  .about-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .about-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+  }
+
+  .about-menu-title {
+    grid-column: 1 / -1;
+  }
+
+  .about-content {
+    overflow: visible;
+  }
+
+  .about-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-meta li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-backdrop {
+    padding: 10px;
+  }
+
+  .about-head {
+    padding: 14px;
+  }
+
+  .about-body {
+    padding: 10px;
+  }
+
+  .about-menu {
+    grid-template-columns: 1fr;
+  }
 }
 
 .connect-panel {
@@ -540,18 +825,108 @@ td.name,
 <div id="aboutDialog" class="about-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle" onclick="if(event.target===this)closeAbout()">
   <section class="about-panel">
     <div class="about-head">
-      <h2 id="aboutTitle">版本信息</h2>
+      <div class="about-title-wrap">
+        <h2 id="aboutTitle">关于驱动器板卡配置平台</h2>
+        <div class="about-subtitle">板卡内置 Web 配置界面 · 文件管理与参数配置</div>
+      </div>
       <button class="about-close" aria-label="关闭关于窗口" onclick="closeAbout()">×</button>
     </div>
+
     <div class="about-body">
-      <div class="about-row"><div class="about-label">平台</div><div class="about-value">驱动器板卡配置平台</div></div>
-      <div class="about-row"><div class="about-label">信息</div><div class="about-value">软硬件信息、版权声明、支持功能、技术支持</div></div>
-      <div class="about-row"><div class="about-label">功能</div><div class="about-value">对外供电软硬件版本管理、多型号芯片脱机烧录、烧录次数管理</div></div>
-      <div class="about-row"><div class="about-label">版权</div><div class="about-value">北京联研国芯技术有限责任公司保留所有权利</div></div>
-      <div class="about-note">© 技术支持</div>
+      <nav class="about-menu" aria-label="关于页面导航">
+        <div class="about-menu-title">ABOUT</div>
+        <button type="button" class="about-tab active" data-about-tab="intro" onclick="switchAboutSection('intro')"><span class="about-tab-icon">概</span><span>软件简介</span></button>
+        <button type="button" class="about-tab" data-about-tab="features" onclick="switchAboutSection('features')"><span class="about-tab-icon">功</span><span>功能说明</span></button>
+        <button type="button" class="about-tab" data-about-tab="flow" onclick="switchAboutSection('flow')"><span class="about-tab-icon">流</span><span>操作流程</span></button>
+        <button type="button" class="about-tab" data-about-tab="file" onclick="switchAboutSection('file')"><span class="about-tab-icon">文</span><span>文件说明</span></button>
+        <button type="button" class="about-tab" data-about-tab="version" onclick="switchAboutSection('version')"><span class="about-tab-icon">版</span><span>版本信息</span></button>
+        <button type="button" class="about-tab" data-about-tab="copyright" onclick="switchAboutSection('copyright')"><span class="about-tab-icon">权</span><span>版权信息</span></button>
+        <button type="button" class="about-tab" data-about-tab="support" onclick="switchAboutSection('support')"><span class="about-tab-icon">支</span><span>技术支持</span></button>
+      </nav>
+
+      <div class="about-content">
+        <section class="about-section" data-about-section="intro">
+          <div class="about-card">
+            <h3>软件简介</h3>
+            <p>本页面运行在 ESP32-S3 板卡内置 Web 服务中，用于完成板卡文件管理、参数文件选择、参数查看与设备参数配置。界面面向现场调试和交付维护场景，尽量减少额外工具依赖。</p>
+          </div>
+          <div class="about-kpi-grid">
+            <div class="about-kpi"><div class="about-kpi-value">Web</div><div class="about-kpi-label">浏览器访问，无需安装客户端</div></div>
+            <div class="about-kpi"><div class="about-kpi-value">ESP32-S3</div><div class="about-kpi-label">板卡本地提供配置服务</div></div>
+            <div class="about-kpi"><div class="about-kpi-value">参数</div><div class="about-kpi-label">支持参数查看、回读与下载</div></div>
+          </div>
+        </section>
+
+        <section class="about-section" data-about-section="features" hidden>
+          <div class="about-card">
+            <h3>功能说明</h3>
+            <ul class="about-list">
+              <li>支持文件上传、下载、删除与列表刷新。</li>
+              <li>支持从板卡文件系统中选择参数文件。</li>
+              <li>支持参数分组查看，降低长参数列表的操作复杂度。</li>
+              <li>支持默认参数填充，便于快速恢复推荐配置。</li>
+              <li>支持从参数板卡回读当前参数。</li>
+              <li>支持将编辑后的参数下载到目标板卡。</li>
+              <li>支持连接状态提示和取消连接，减少误操作等待。</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="about-section" data-about-section="flow" hidden>
+          <div class="about-card">
+            <h3>推荐操作流程</h3>
+            <ol class="about-steps">
+              <li>连接设备热点或进入设备所在局域网，并在浏览器中打开板卡配置页面。</li>
+              <li>进入“文件管理”，上传或确认需要使用的参数文件。</li>
+              <li>切换到“参数配置”，在左侧选择目标参数文件。</li>
+              <li>查看参数分组，根据现场需要修改参数值。</li>
+              <li>需要恢复推荐值时，点击“默认参数”。</li>
+              <li>需要同步设备当前状态时，点击“回读参数”。</li>
+              <li>确认无误后，点击“下载参数”，将参数写入目标板卡。</li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="about-section" data-about-section="file" hidden>
+          <div class="about-card">
+            <h3>文件说明</h3>
+            <p>参数文件为本系统使用的专用文件，请通过配套工具生成和维护。请勿手动修改文件内容，文件损坏、来源不正确或内容被改动时，可能导致页面无法解析或设备无法识别。</p>
+          </div>
+          <div class="about-note">建议妥善保存原始工程文件和已确认版本的参数文件，便于后续维护、问题追溯和重新发布。</div>
+        </section>
+
+        <section class="about-section" data-about-section="version" hidden>
+          <div class="about-card">
+            <h3>版本信息</h3>
+            <ul class="about-meta">
+              <li><span class="about-label">平台名称</span><span class="about-value">驱动器板卡配置平台</span></li>
+              <li><span class="about-label">界面版本</span><span class="about-value">V1.0.0</span></li>
+              <li><span class="about-label">运行平台</span><span class="about-value">ESP32-S3 内置 Web 服务</span></li>
+              <li><span class="about-label">主要用途</span><span class="about-value">文件管理、参数查看、参数回读与参数下载</span></li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="about-section" data-about-section="copyright" hidden>
+          <div class="about-card">
+            <h3>版权信息</h3>
+            <p>© 2026 北京联研国芯技术有限责任公司。保留所有权利。</p>
+          </div>
+          <div class="about-note">本软件仅限授权用户在指定设备和项目中使用，未经许可不得复制、传播、修改、反编译或用于其他商业用途。</div>
+        </section>
+
+        <section class="about-section" data-about-section="support" hidden>
+          <div class="about-card about-support-card">
+            <h3>技术支持</h3>
+            <p>如遇到文件无法识别、参数回读失败、参数下载失败、板卡连接异常等问题，请联系技术支持并提供设备型号、软件版本、操作步骤和错误现象。</p>
+            <span class="about-support-mail">xieyaojie@uniedge.cn</span>
+          </div>
+        </section>
+      </div>
     </div>
   </section>
 </div>
+
 <div id="connectDialog" class="about-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="connectTitle">
   <section class="about-panel connect-panel">
     <div class="about-head">
@@ -983,7 +1358,14 @@ async function deleteFileByPath(path){
   setMsg('删除完成',true);loadFiles();
 }
 async function logout(){try{await fetch('/api/logout',{method:'POST'})}catch(e){}location.href='/'}
-function openAbout(){$('aboutDialog').classList.remove('hidden')}
+function switchAboutSection(id){
+  document.querySelectorAll('[data-about-tab]').forEach(btn=>btn.classList.toggle('active',btn.dataset.aboutTab===id));
+  document.querySelectorAll('[data-about-section]').forEach(sec=>{sec.hidden=sec.dataset.aboutSection!==id;});
+}
+function openAbout(){
+  switchAboutSection('intro');
+  $('aboutDialog').classList.remove('hidden');
+}
 function closeAbout(){$('aboutDialog').classList.add('hidden')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAbout();});
 function actDefault(){
