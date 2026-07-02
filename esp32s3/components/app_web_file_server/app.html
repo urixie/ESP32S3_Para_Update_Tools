@@ -1740,7 +1740,7 @@ body::before {
         <section class="flash-read-panel">
           <div class="flash-dump-head">
             <div>
-              <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：4KB，行大小：1024 字节</p>
+              <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：1KB，行大小：128 字节</p>
             </div>
             <span id="flashDumpStatus" class="badge flash-dump-status">等待 flash回读</span>
           </div>
@@ -1754,11 +1754,11 @@ body::before {
           </div>
           <div class="flash-dump-query">
             <label for="flashDumpPageInput">页号</label>
-            <input id="flashDumpPageInput" type="number" min="0" max="127" value="0" inputmode="numeric" disabled>
+            <input id="flashDumpPageInput" type="number" min="0" max="511" value="0" inputmode="numeric" disabled>
             <button id="btnFlashDumpPrev" onclick="changeFlashDumpPage(-1)" disabled>上一页</button>
             <button id="btnFlashDumpQuery" onclick="queryFlashDumpPage()" disabled>查询</button>
             <button id="btnFlashDumpNext" onclick="changeFlashDumpPage(1)" disabled>下一页</button>
-            <span id="flashDumpPageInfo" class="flash-dump-page-info">页 0 / 127，起始地址 0，范围 0 - 4095</span>
+            <span id="flashDumpPageInfo" class="flash-dump-page-info">页 0 / 511，起始地址 0，范围 0 - 1023</span>
           </div>
           <div id="flashDumpEmpty" class="empty flash-dump-empty">暂无 flash 回读数据</div>
           <div id="flashDumpView" class="flash-dump-view hidden">
@@ -1935,8 +1935,8 @@ const PARAM_TIME_BASE_NS=50;
 const PARAM_MAX_BOARD_VALUE=65535;
 const PARAM_MAX_NS=PARAM_MAX_BOARD_VALUE*PARAM_TIME_BASE_NS;
 const FLASH_DUMP_TOTAL_BYTES=512*1024;
-const FLASH_DUMP_PAGE_BYTES=4*1024;
-const FLASH_DUMP_ROW_BYTES=1024;
+const FLASH_DUMP_PAGE_BYTES=1024;
+const FLASH_DUMP_ROW_BYTES=128;
 const FLASH_DUMP_PAGE_COUNT=FLASH_DUMP_TOTAL_BYTES/FLASH_DUMP_PAGE_BYTES;
 const FLASH_DUMP_ROWS_PER_PAGE=FLASH_DUMP_PAGE_BYTES/FLASH_DUMP_ROW_BYTES;
 const FLASH_DUMP_CELL_WIDTH=38;
