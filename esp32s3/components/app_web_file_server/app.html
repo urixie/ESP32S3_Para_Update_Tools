@@ -1740,7 +1740,7 @@ body::before {
         <section class="flash-read-panel">
           <div class="flash-dump-head">
             <div>
-              <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：1KB，行大小：128 字节</p>
+              <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：1KB，行大小：74 字节</p>
             </div>
             <span id="flashDumpStatus" class="badge flash-dump-status">等待 flash回读</span>
           </div>
@@ -1936,9 +1936,9 @@ const PARAM_MAX_BOARD_VALUE=65535;
 const PARAM_MAX_NS=PARAM_MAX_BOARD_VALUE*PARAM_TIME_BASE_NS;
 const FLASH_DUMP_TOTAL_BYTES=512*1024;
 const FLASH_DUMP_PAGE_BYTES=1024;
-const FLASH_DUMP_ROW_BYTES=128;
+const FLASH_DUMP_ROW_BYTES=74;
 const FLASH_DUMP_PAGE_COUNT=FLASH_DUMP_TOTAL_BYTES/FLASH_DUMP_PAGE_BYTES;
-const FLASH_DUMP_ROWS_PER_PAGE=FLASH_DUMP_PAGE_BYTES/FLASH_DUMP_ROW_BYTES;
+const FLASH_DUMP_ROWS_PER_PAGE=Math.ceil(FLASH_DUMP_PAGE_BYTES/FLASH_DUMP_ROW_BYTES);
 const FLASH_DUMP_CELL_WIDTH=38;
 const FLASH_DUMP_ROW_LABEL_WIDTH=64;
 const FLASH_DUMP_HEADER_HEIGHT=28;
