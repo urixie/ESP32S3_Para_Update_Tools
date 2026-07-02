@@ -962,7 +962,8 @@ td.name,
 
 .flash-dump-head,
 .flash-dump-actions,
-.flash-dump-progress-row {
+.flash-dump-progress-row,
+.flash-dump-query {
   flex: 0 0 auto;
 }
 
@@ -1012,6 +1013,58 @@ td.name,
   font-variant-numeric: tabular-nums;
 }
 
+.flash-dump-query {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid rgba(43, 90, 78, .62);
+  border-radius: 12px;
+  background: rgba(6, 17, 14, .48);
+}
+
+.flash-dump-query label,
+.flash-dump-page-info {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.flash-dump-query input {
+  width: 86px;
+  border: 1px solid rgba(43, 90, 78, .82);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: var(--text);
+  background: rgba(11, 30, 24, .92);
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-dump-query button {
+  min-width: 72px;
+  padding: 8px 11px;
+}
+
+.flash-dump-page-info {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-dump-status {
+  max-width: min(460px, 46vw);
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-dump-status.err-state {
+  border-color: rgba(255, 90, 79, .62);
+  color: #ffb4ac;
+  background: rgba(90, 40, 38, .45);
+}
+
 .flash-dump-view {
   flex: 1 1 auto;
   min-height: 0;
@@ -1022,50 +1075,78 @@ td.name,
   scrollbar-gutter: stable;
 }
 
-.flash-dump-table {
-  width: max-content;
-  border-collapse: collapse;
+.flash-dump-canvas {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
   font-family: Consolas, 'Courier New', monospace;
 }
 
-.flash-dump-table th,
-.flash-dump-table td {
-  min-width: 38px;
-  max-width: 38px;
-  padding: 5px 6px;
+.flash-dump-corner,
+.flash-dump-cols,
+.flash-dump-row-labels,
+.flash-dump-cells {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.flash-dump-corner,
+.flash-dump-cols,
+.flash-dump-row-labels {
+  pointer-events: none;
+  will-change: transform;
+}
+
+.flash-dump-corner {
+  z-index: 5;
+}
+
+.flash-dump-cols {
+  z-index: 4;
+}
+
+.flash-dump-row-labels {
+  z-index: 3;
+}
+
+.flash-dump-cells {
+  z-index: 1;
+}
+
+.flash-dump-corner,
+.flash-dump-col,
+.flash-dump-row-label,
+.flash-dump-cell {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-right: 1px solid rgba(30, 58, 52, .58);
   border-bottom: 1px solid rgba(30, 58, 52, .76);
   white-space: nowrap;
   text-align: center;
   font-size: .72rem;
-  line-height: 1.25;
+  line-height: 1;
+  overflow: hidden;
 }
 
-.flash-dump-table th {
-  position: sticky;
-  top: 0;
-  z-index: 4;
+.flash-dump-corner,
+.flash-dump-col {
   background: linear-gradient(180deg, #102820, #0B1E18);
   color: var(--gold);
 }
 
-.flash-dump-row {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  min-width: 64px !important;
-  max-width: 64px !important;
+.flash-dump-row-label {
   text-align: right;
+  justify-content: flex-end;
+  padding-right: 8px;
   color: #CFFFEA;
   background: #0B1E18;
   font-variant-numeric: tabular-nums;
 }
 
-.flash-dump-table th.flash-dump-row {
-  z-index: 5;
-}
-
-.flash-dump-byte {
+.flash-dump-cell {
   color: #E8FFF6;
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
@@ -1659,9 +1740,9 @@ body::before {
         <section class="flash-read-panel">
           <div class="flash-dump-head">
             <div>
-              <p id="flashDumpSummary" class="sub">导出大小：512KB，行大小：4096 字节</p>
+              <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：4KB，行大小：1024 字节</p>
             </div>
-            <span id="flashDumpBytes" class="badge">0 / 524288</span>
+            <span id="flashDumpStatus" class="badge flash-dump-status">等待 flash回读</span>
           </div>
           <div class="flash-dump-actions">
             <button id="btnFlashDumpStart" class="primary" onclick="actFlashDump()">连接板卡并读取 Flash</button>
@@ -1671,13 +1752,22 @@ body::before {
             <div class="flash-dump-progress" aria-hidden="true"><div id="flashDumpProgressBar" class="flash-dump-progress-bar"></div></div>
             <div id="flashDumpProgressText" class="flash-dump-progress-text">0%</div>
           </div>
-          <div id="flashDumpMsg" class="msg">等待 flash回读</div>
+          <div class="flash-dump-query">
+            <label for="flashDumpPageInput">页号</label>
+            <input id="flashDumpPageInput" type="number" min="0" max="127" value="0" inputmode="numeric" disabled>
+            <button id="btnFlashDumpPrev" onclick="changeFlashDumpPage(-1)" disabled>上一页</button>
+            <button id="btnFlashDumpQuery" onclick="queryFlashDumpPage()" disabled>查询</button>
+            <button id="btnFlashDumpNext" onclick="changeFlashDumpPage(1)" disabled>下一页</button>
+            <span id="flashDumpPageInfo" class="flash-dump-page-info">页 0 / 127，起始地址 0，范围 0 - 4095</span>
+          </div>
           <div id="flashDumpEmpty" class="empty flash-dump-empty">暂无 flash 回读数据</div>
           <div id="flashDumpView" class="flash-dump-view hidden">
-            <table class="flash-dump-table">
-              <thead id="flashDumpHead"></thead>
-              <tbody id="flashDumpRows"></tbody>
-            </table>
+            <div id="flashDumpCanvas" class="flash-dump-canvas">
+              <div id="flashDumpCorner" class="flash-dump-corner">&#34892;&#21495;</div>
+              <div id="flashDumpCols" class="flash-dump-cols"></div>
+              <div id="flashDumpRowLabels" class="flash-dump-row-labels"></div>
+              <div id="flashDumpCells" class="flash-dump-cells"></div>
+            </div>
           </div>
         </section>
       </section>
@@ -1845,7 +1935,14 @@ const PARAM_TIME_BASE_NS=50;
 const PARAM_MAX_BOARD_VALUE=65535;
 const PARAM_MAX_NS=PARAM_MAX_BOARD_VALUE*PARAM_TIME_BASE_NS;
 const FLASH_DUMP_TOTAL_BYTES=512*1024;
-const FLASH_DUMP_ROW_BYTES=4*1024;
+const FLASH_DUMP_PAGE_BYTES=4*1024;
+const FLASH_DUMP_ROW_BYTES=1024;
+const FLASH_DUMP_PAGE_COUNT=FLASH_DUMP_TOTAL_BYTES/FLASH_DUMP_PAGE_BYTES;
+const FLASH_DUMP_ROWS_PER_PAGE=FLASH_DUMP_PAGE_BYTES/FLASH_DUMP_ROW_BYTES;
+const FLASH_DUMP_CELL_WIDTH=38;
+const FLASH_DUMP_ROW_LABEL_WIDTH=64;
+const FLASH_DUMP_HEADER_HEIGHT=28;
+const FLASH_DUMP_ROW_HEIGHT=24;
 const HEX_TABLE=Array.from({length:256},(_,i)=>i.toString(16).toUpperCase().padStart(2,'0'));
 const paramCounts={}; // path -> 已解析得到的参数数量
 const boardParamStates={}; // path -> { parameters: [], currentParamType: 'control', parsed: false }
@@ -1853,8 +1950,10 @@ let allFiles=[],binFiles=[],selected=null,uploading=false,paramBusy=false,parsed
 let toastTimer=null;
 let boardConnectCanceled=false;
 let downloadConfirmResolver=null;
-let flashDumpBusy=false,flashDumpBuffer=null,flashDumpOpId=0;
+let flashDumpBusy=false,flashDumpBuffer=null,flashDumpBytes=null,flashDumpOpId=0;
+let flashDumpPageIndex=0,flashDumpScrollRaf=0;
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
+$('flashDumpView').addEventListener('scroll',()=>scheduleFlashDumpStickySync(),{passive:true});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setMsg(s,ok=false){$('msg').className='msg '+(ok?'ok':'');$('msg').textContent=s||''}
 function showToast(s,duration=1000){
@@ -1875,8 +1974,14 @@ function updateParamButtons(){
   $('btnDownload').disabled=disabled;
 }
 function updateFlashDumpButtons(){
+  const hasDump=!!flashDumpBuffer;
+  const canQuery=hasDump&&!flashDumpBusy;
   $('btnFlashDumpStart').disabled=flashDumpBusy||paramBusy;
-  $('btnFlashDumpExport').disabled=flashDumpBusy||!flashDumpBuffer;
+  $('btnFlashDumpExport').disabled=flashDumpBusy||!hasDump;
+  $('flashDumpPageInput').disabled=!canQuery;
+  $('btnFlashDumpQuery').disabled=!canQuery;
+  $('btnFlashDumpPrev').disabled=!canQuery||flashDumpPageIndex<=0;
+  $('btnFlashDumpNext').disabled=!canQuery||flashDumpPageIndex>=FLASH_DUMP_PAGE_COUNT-1;
 }
 function setParamBusy(b){
   paramBusy=b;
@@ -1959,8 +2064,9 @@ async function postForm(url,fields,options={}){
   return j;
 }
 function setFlashDumpMessage(message,isError=false){
-  $('flashDumpMsg').className='msg '+(isError?'err':'');
-  $('flashDumpMsg').textContent=message||'';
+  const status=$('flashDumpStatus');
+  status.className='badge flash-dump-status'+(isError?' err-state':'');
+  status.textContent=message||'';
 }
 function setFlashDumpProgress(bytes,total,message){
   const safeTotal=total||FLASH_DUMP_TOTAL_BYTES;
@@ -1968,41 +2074,121 @@ function setFlashDumpProgress(bytes,total,message){
   const percent=safeTotal?Math.floor(safeBytes*100/safeTotal):0;
   $('flashDumpProgressBar').style.width=percent+'%';
   $('flashDumpProgressText').textContent=percent+'%';
-  $('flashDumpBytes').textContent=safeBytes+' / '+safeTotal;
   if(message)setFlashDumpMessage(message);
 }
 function resetFlashDumpView(){
   flashDumpBuffer=null;
-  $('flashDumpHead').innerHTML='';
-  $('flashDumpRows').innerHTML='';
+  flashDumpBytes=null;
+  flashDumpPageIndex=0;
+  if(flashDumpScrollRaf){
+    cancelAnimationFrame(flashDumpScrollRaf);
+    flashDumpScrollRaf=0;
+  }
+  const view=$('flashDumpView');
+  view.scrollLeft=0;
+  view.scrollTop=0;
+  $('flashDumpPageInput').value='0';
+  setFlashDumpPageInfo(0);
+  $('flashDumpCanvas').style.width='0px';
+  $('flashDumpCanvas').style.height='0px';
+  $('flashDumpCols').innerHTML='';
+  $('flashDumpRowLabels').innerHTML='';
+  $('flashDumpCells').innerHTML='';
   $('flashDumpView').classList.add('hidden');
   $('flashDumpEmpty').classList.remove('hidden');
   setFlashDumpProgress(0,FLASH_DUMP_TOTAL_BYTES,'等待 flash回读');
   updateFlashDumpButtons();
 }
-function buildFlashDumpHeader(){
-  const cells=['<th class="flash-dump-row">行号</th>'];
+function clampFlashDumpPage(value){
+  let page=Number.parseInt(value,10);
+  if(!Number.isFinite(page))page=0;
+  if(page<0)page=0;
+  if(page>=FLASH_DUMP_PAGE_COUNT)page=FLASH_DUMP_PAGE_COUNT-1;
+  return page;
+}
+function setFlashDumpPageInfo(page){
+  const start=page*FLASH_DUMP_PAGE_BYTES;
+  const end=start+FLASH_DUMP_PAGE_BYTES-1;
+  $('flashDumpPageInfo').textContent='页 '+page+' / '+(FLASH_DUMP_PAGE_COUNT-1)+'，起始地址 '+start+'，范围 '+start+' - '+end;
+}
+function setFlashDumpStickyTransform(view){
+  const x=view.scrollLeft;
+  const y=view.scrollTop;
+  $('flashDumpCorner').style.transform='translate('+x+'px,'+y+'px)';
+  $('flashDumpCols').style.transform='translateY('+y+'px)';
+  $('flashDumpRowLabels').style.transform='translateX('+x+'px)';
+}
+function setFlashDumpCanvasSize(){
+  const width=FLASH_DUMP_ROW_LABEL_WIDTH+FLASH_DUMP_ROW_BYTES*FLASH_DUMP_CELL_WIDTH;
+  const height=FLASH_DUMP_HEADER_HEIGHT+FLASH_DUMP_ROWS_PER_PAGE*FLASH_DUMP_ROW_HEIGHT;
+  const canvas=$('flashDumpCanvas');
+  canvas.style.width=width+'px';
+  canvas.style.height=height+'px';
+  $('flashDumpCorner').style.left='0px';
+  $('flashDumpCorner').style.top='0px';
+  $('flashDumpCorner').style.width=FLASH_DUMP_ROW_LABEL_WIDTH+'px';
+  $('flashDumpCorner').style.height=FLASH_DUMP_HEADER_HEIGHT+'px';
+  $('flashDumpCols').style.width=width+'px';
+  $('flashDumpCols').style.height=FLASH_DUMP_HEADER_HEIGHT+'px';
+  $('flashDumpRowLabels').style.width=FLASH_DUMP_ROW_LABEL_WIDTH+'px';
+  $('flashDumpRowLabels').style.height=height+'px';
+}
+function scheduleFlashDumpStickySync(){
+  if(flashDumpScrollRaf)return;
+  flashDumpScrollRaf=requestAnimationFrame(()=>{
+    flashDumpScrollRaf=0;
+    setFlashDumpStickyTransform($('flashDumpView'));
+  });
+}
+function renderFlashDumpPage(page){
+  if(!flashDumpBytes)return;
+  const safePage=clampFlashDumpPage(page);
+  flashDumpPageIndex=safePage;
+  $('flashDumpPageInput').value=String(safePage);
+  setFlashDumpPageInfo(safePage);
+  setFlashDumpCanvasSize();
+  const view=$('flashDumpView');
+  view.scrollLeft=0;
+  view.scrollTop=0;
+  setFlashDumpStickyTransform(view);
+
+  const cols=[];
   for(let col=0;col<FLASH_DUMP_ROW_BYTES;col++){
-    cells.push('<th>'+col+'</th>');
+    cols.push('<div class="flash-dump-col" style="left:'+(FLASH_DUMP_ROW_LABEL_WIDTH+col*FLASH_DUMP_CELL_WIDTH)+'px;top:0;width:'+FLASH_DUMP_CELL_WIDTH+'px;height:'+FLASH_DUMP_HEADER_HEIGHT+'px">'+col+'</div>');
   }
-  return '<tr>'+cells.join('')+'</tr>';
+  $('flashDumpCols').innerHTML=cols.join('');
+
+  const labels=[];
+  const cells=[];
+  const pageOffset=safePage*FLASH_DUMP_PAGE_BYTES;
+  for(let row=0;row<FLASH_DUMP_ROWS_PER_PAGE;row++){
+    const top=FLASH_DUMP_HEADER_HEIGHT+row*FLASH_DUMP_ROW_HEIGHT;
+    labels.push('<div class="flash-dump-row-label" style="left:0;top:'+top+'px;width:'+FLASH_DUMP_ROW_LABEL_WIDTH+'px;height:'+FLASH_DUMP_ROW_HEIGHT+'px">'+row+'</div>');
+    const rowOffset=pageOffset+row*FLASH_DUMP_ROW_BYTES;
+    const rowEnd=Math.min(FLASH_DUMP_ROW_BYTES,flashDumpBytes.length-rowOffset);
+    for(let col=0;col<rowEnd;col++){
+      const left=FLASH_DUMP_ROW_LABEL_WIDTH+col*FLASH_DUMP_CELL_WIDTH;
+      cells.push('<div class="flash-dump-cell" style="left:'+left+'px;top:'+top+'px;width:'+FLASH_DUMP_CELL_WIDTH+'px;height:'+FLASH_DUMP_ROW_HEIGHT+'px">'+HEX_TABLE[flashDumpBytes[rowOffset+col]]+'</div>');
+    }
+  }
+  $('flashDumpRowLabels').innerHTML=labels.join('');
+  $('flashDumpCells').innerHTML=cells.join('');
+  updateFlashDumpButtons();
 }
 function renderFlashDumpData(buffer){
-  const bytes=new Uint8Array(buffer);
-  const rows=[];
-  $('flashDumpHead').innerHTML=buildFlashDumpHeader();
-  for(let offset=0,row=0;offset<bytes.length;offset+=FLASH_DUMP_ROW_BYTES,row++){
-    const end=Math.min(offset+FLASH_DUMP_ROW_BYTES,bytes.length);
-    const cells=['<td class="flash-dump-row">'+row+'</td>'];
-    for(let i=offset;i<end;i++){
-      cells.push('<td class="flash-dump-byte">'+HEX_TABLE[bytes[i]]+'</td>');
-    }
-    rows.push('<tr>'+cells.join('')+'</tr>');
-  }
-  $('flashDumpRows').innerHTML=rows.join('');
+  flashDumpBuffer=buffer;
+  flashDumpBytes=new Uint8Array(buffer);
   $('flashDumpEmpty').classList.add('hidden');
   $('flashDumpView').classList.remove('hidden');
-  $('flashDumpBytes').textContent=bytes.length+' / '+FLASH_DUMP_TOTAL_BYTES;
+  renderFlashDumpPage(0);
+}
+function queryFlashDumpPage(){
+  if(!flashDumpBytes)return;
+  renderFlashDumpPage($('flashDumpPageInput').value);
+}
+function changeFlashDumpPage(delta){
+  if(!flashDumpBytes)return;
+  renderFlashDumpPage(flashDumpPageIndex+delta);
 }
 async function getFlashDumpStatus(opId){
   const r=await fetch('/api/flash-dump/status?id='+encodeURIComponent(opId),{cache:'no-store'});
@@ -2105,6 +2291,9 @@ function switchPage(page){
   root.classList.toggle('page-about',page==='about');
   if(page==='about'){
     switchAboutSection('intro');
+  }
+  if(page==='flashDump'&&flashDumpBuffer){
+    scheduleFlashDumpStickySync();
   }
   if(page==='params'){
     if(!selected&&binFiles.length>0){
