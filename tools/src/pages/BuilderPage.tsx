@@ -167,6 +167,15 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({
     <section className="panel page-panel builder-panel">
       <div className="page-workspace">
         <aside className="page-side-panel builder-side-panel">
+          <div className="side-panel-section action-section">
+            <div className="side-panel-title">工程操作</div>
+            <div className="side-action-list secondary-actions">
+              <button onClick={handleNewProject} disabled={busy}>新建工程</button>
+              <button onClick={handleSaveProject} disabled={busy}>保存工程文件</button>
+              <button onClick={handleLoadProject} disabled={busy}>加载工程文件</button>
+            </div>
+          </div>
+
           <div className="side-panel-section">
             <div className="side-panel-title">工程信息</div>
             <label className="side-field">
@@ -199,15 +208,6 @@ export const BuilderPage: React.FC<BuilderPageProps> = ({
                 title={`最多 ${BOARD_NAME_MAX_CHARS} 个字符，写入加密 bin Payload`}
               />
             </label>
-          </div>
-
-          <div className="side-panel-section action-section">
-            <div className="side-panel-title">工程操作</div>
-            <div className="side-action-list secondary-actions">
-              <button onClick={handleNewProject} disabled={busy}>新建工程</button>
-              <button onClick={handleSaveProject} disabled={busy}>保存工程文件</button>
-              <button onClick={handleLoadProject} disabled={busy}>加载工程文件</button>
-            </div>
           </div>
 
           <div className="side-panel-section action-section">
