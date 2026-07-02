@@ -1372,7 +1372,7 @@ body::before {
               </nav>
               <div class="result-body">
                 <div id="paramEmpty" class="empty hidden">当前分类暂无可见参数</div>
-                <div id="paramTable" class="param-table"><div class="table-inner"><table><thead><tr><th>参数名称</th><th>参数值</th><th>参数名称</th><th>参数值</th></tr></thead><tbody id="paramRows"></tbody></table></div></div>
+                <div id="paramTable" class="param-table"><div class="table-inner"><table><thead><tr><th>参数名称</th><th>参数值(ns)</th><th>参数名称</th><th>参数值(ns)</th></tr></thead><tbody id="paramRows"></tbody></table></div></div>
               </div>
             </div>
           </div>
@@ -1779,7 +1779,7 @@ function renderParamTable(){
       if(!x)return '<td class="name param-empty-cell"></td><td class="value param-empty-cell"></td>';
       const v=x.p.currentValue==null?'':x.p.currentValue;
       return '<td class="name">'+esc(x.p.name)+'</td>'
-        +'<td class="value"><span class="param-value-cell"><input class="param-value-input" type="number" min="0" max="'+PARAM_MAX_NS+'" step="'+PARAM_TIME_BASE_NS+'" inputmode="numeric" data-index="'+x.i+'" value="'+esc(v)+'"><span class="param-unit">ns</span></span></td>';
+        +'<td class="value"><span class="param-value-cell"><input class="param-value-input" type="number" min="0" max="'+PARAM_MAX_NS+'" step="'+PARAM_TIME_BASE_NS+'" inputmode="numeric" data-index="'+x.i+'" value="'+esc(v)+'"></span></td>';
     }).join('');
     rows.push('<tr>'+cells+'</tr>');
   }

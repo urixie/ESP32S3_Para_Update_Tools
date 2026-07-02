@@ -508,6 +508,10 @@ button {
   border-bottom: 1px solid var(--border-soft);
 }
 
+.param-table th.col-value {
+  text-transform: none;
+}
+
 .param-table td {
   padding: 0.18rem 0.28rem;
   border-bottom: 1px solid rgba(30, 58, 52, 0.76);
