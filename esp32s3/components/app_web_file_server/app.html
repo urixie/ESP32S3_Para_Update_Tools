@@ -918,6 +918,163 @@ td.name,
   border-color: #48F28B;
 }
 
+.root.page-flash-dump {
+  grid-template-columns: 169px minmax(0, 1fr);
+}
+
+.root.page-flash-dump .side {
+  display: none;
+}
+
+#flashDumpPage.flash-dump-page {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.advanced-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 14px;
+  overflow: hidden;
+}
+
+.advanced-tabs {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  align-self: start;
+}
+
+.flash-read-panel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.flash-dump-head,
+.flash-dump-actions,
+.flash-dump-progress-row {
+  flex: 0 0 auto;
+}
+
+.flash-dump-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.flash-dump-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flash-dump-actions button {
+  min-width: 132px;
+}
+
+.flash-dump-progress {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(43, 90, 78, .82);
+  border-radius: 999px;
+  background: rgba(6, 17, 14, .72);
+}
+
+.flash-dump-progress-bar {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #00C853, #21D4FD);
+  transition: width .16s ease;
+}
+
+.flash-dump-progress-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.flash-dump-progress-text {
+  color: var(--gold);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-dump-view {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(43, 90, 78, .82);
+  border-radius: 14px;
+  background: rgba(6, 17, 14, .72);
+  scrollbar-gutter: stable;
+}
+
+.flash-dump-table {
+  width: max-content;
+  border-collapse: collapse;
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.flash-dump-table th,
+.flash-dump-table td {
+  min-width: 38px;
+  max-width: 38px;
+  padding: 5px 6px;
+  border-right: 1px solid rgba(30, 58, 52, .58);
+  border-bottom: 1px solid rgba(30, 58, 52, .76);
+  white-space: nowrap;
+  text-align: center;
+  font-size: .72rem;
+  line-height: 1.25;
+}
+
+.flash-dump-table th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: linear-gradient(180deg, #102820, #0B1E18);
+  color: var(--gold);
+}
+
+.flash-dump-row {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 64px !important;
+  max-width: 64px !important;
+  text-align: right;
+  color: #CFFFEA;
+  background: #0B1E18;
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-dump-table th.flash-dump-row {
+  z-index: 5;
+}
+
+.flash-dump-byte {
+  color: #E8FFF6;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-dump-empty {
+  flex: 1 1 auto;
+}
+
 .root.page-about {
   grid-template-columns: 169px minmax(0, 1fr);
 }
@@ -1219,12 +1376,14 @@ th,
   gap: 10px;
 }
 
-.result-layout {
+.result-layout,
+.advanced-shell {
   grid-template-columns: 104px minmax(0, 1fr);
   gap: 10px;
 }
 
-.param-tabs {
+.param-tabs,
+.advanced-tabs {
   width: 104px;
 }
 
@@ -1333,17 +1492,20 @@ th,
 
 @media (max-width: 900px) {
   .root,
-  .root.page-files {
+  .root.page-files,
+  .root.page-flash-dump {
     grid-template-columns: 1fr;
   }
 
   .param-shell,
-  .result-layout {
+  .result-layout,
+  .advanced-shell {
     display: flex;
     flex-direction: column;
   }
 
   .param-tabs,
+  .advanced-tabs,
   .action-pane {
     width: 100%;
   }
@@ -1453,6 +1615,7 @@ body::before {
     <nav class="nav-menu">
       <button id="navParams" class="nav-btn active" onclick="switchPage('params')"><span class="nav-icon">⚙</span><span>参数配置</span></button>
       <button id="navFiles" class="nav-btn" onclick="switchPage('files')"><span class="nav-icon">📁</span><span>板卡管理</span></button>
+      <button id="navFlashDump" class="nav-btn" onclick="switchPage('flashDump')"><span class="nav-icon">↓</span><span>高级功能</span></button>
       <button id="navAbout" class="nav-btn" onclick="switchPage('about')"><span class="nav-icon">ℹ</span><span>关于</span></button>
     </nav>
     <div class="nav-foot">
@@ -1484,6 +1647,38 @@ body::before {
         <section class="panel file-list-pane">
           <div class="view-title"><div><h2>板卡列表</h2></div><span id="fileCount" class="badge">0</span></div>
           <div id="fileTable" class="table"><table><thead><tr><th>板卡名称</th><th>操作</th><th>板卡名称</th><th>操作</th></tr></thead><tbody id="fileRows"></tbody></table></div>
+        </section>
+      </section>
+    </section>
+
+    <section id="flashDumpPage" class="page flash-dump-page hidden">
+      <section class="advanced-shell">
+        <nav class="advanced-tabs">
+          <button id="tabFlashRead" class="subtab active" type="button">flash回读</button>
+        </nav>
+        <section class="flash-read-panel">
+          <div class="flash-dump-head">
+            <div>
+              <p id="flashDumpSummary" class="sub">导出大小：512KB，行大小：4096 字节</p>
+            </div>
+            <span id="flashDumpBytes" class="badge">0 / 524288</span>
+          </div>
+          <div class="flash-dump-actions">
+            <button id="btnFlashDumpStart" class="primary" onclick="actFlashDump()">连接板卡并读取 Flash</button>
+            <button id="btnFlashDumpExport" onclick="exportFlashDump()" disabled>导出 Bin</button>
+          </div>
+          <div class="flash-dump-progress-row">
+            <div class="flash-dump-progress" aria-hidden="true"><div id="flashDumpProgressBar" class="flash-dump-progress-bar"></div></div>
+            <div id="flashDumpProgressText" class="flash-dump-progress-text">0%</div>
+          </div>
+          <div id="flashDumpMsg" class="msg">等待 flash回读</div>
+          <div id="flashDumpEmpty" class="empty flash-dump-empty">暂无 flash 回读数据</div>
+          <div id="flashDumpView" class="flash-dump-view hidden">
+            <table class="flash-dump-table">
+              <thead id="flashDumpHead"></thead>
+              <tbody id="flashDumpRows"></tbody>
+            </table>
+          </div>
         </section>
       </section>
     </section>
@@ -1649,12 +1844,16 @@ const $=id=>document.getElementById(id);
 const PARAM_TIME_BASE_NS=50;
 const PARAM_MAX_BOARD_VALUE=65535;
 const PARAM_MAX_NS=PARAM_MAX_BOARD_VALUE*PARAM_TIME_BASE_NS;
+const FLASH_DUMP_TOTAL_BYTES=512*1024;
+const FLASH_DUMP_ROW_BYTES=4*1024;
+const HEX_TABLE=Array.from({length:256},(_,i)=>i.toString(16).toUpperCase().padStart(2,'0'));
 const paramCounts={}; // path -> 已解析得到的参数数量
 const boardParamStates={}; // path -> { parameters: [], currentParamType: 'control', parsed: false }
 let allFiles=[],binFiles=[],selected=null,uploading=false,paramBusy=false,parsedParams=[],currentParamType='control',currentPage='params';
 let toastTimer=null;
 let boardConnectCanceled=false;
 let downloadConfirmResolver=null;
+let flashDumpBusy=false,flashDumpBuffer=null,flashDumpOpId=0;
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function setMsg(s,ok=false){$('msg').className='msg '+(ok?'ok':'');$('msg').textContent=s||''}
@@ -1669,12 +1868,25 @@ function showToast(s,duration=1000){
 async function readErr(r){try{const j=await r.clone().json();return j.error||r.statusText}catch(e){return await r.text()||r.statusText}}
 function xhrErrorText(x){try{const j=JSON.parse(x.responseText||'{}');return j.error||x.statusText}catch(e){return x.responseText||x.statusText||'连接失败'}}
 function setBusy(b){uploading=b;$('uploadBtn').disabled=b;$('refreshBtn').disabled=b}
-function setParamBusy(b){
-  paramBusy=b;
-  const disabled=b||!selected;
+function updateParamButtons(){
+  const disabled=paramBusy||flashDumpBusy||!selected;
   $('btnDefault').disabled=disabled;
   $('btnReadback').disabled=disabled;
   $('btnDownload').disabled=disabled;
+}
+function updateFlashDumpButtons(){
+  $('btnFlashDumpStart').disabled=flashDumpBusy||paramBusy;
+  $('btnFlashDumpExport').disabled=flashDumpBusy||!flashDumpBuffer;
+}
+function setParamBusy(b){
+  paramBusy=b;
+  updateParamButtons();
+  updateFlashDumpButtons();
+}
+function setFlashDumpBusy(b){
+  flashDumpBusy=b;
+  updateParamButtons();
+  updateFlashDumpButtons();
 }
 function openBoardConnectDialog(actionText){
   $('connectAction').textContent=actionText||'正在和参数板卡握手';
@@ -1746,6 +1958,118 @@ async function postForm(url,fields,options={}){
   if(!r.ok||!j.ok)throw new Error((j&&j.error)||r.statusText);
   return j;
 }
+function setFlashDumpMessage(message,isError=false){
+  $('flashDumpMsg').className='msg '+(isError?'err':'');
+  $('flashDumpMsg').textContent=message||'';
+}
+function setFlashDumpProgress(bytes,total,message){
+  const safeTotal=total||FLASH_DUMP_TOTAL_BYTES;
+  const safeBytes=Math.max(0,Math.min(bytes||0,safeTotal));
+  const percent=safeTotal?Math.floor(safeBytes*100/safeTotal):0;
+  $('flashDumpProgressBar').style.width=percent+'%';
+  $('flashDumpProgressText').textContent=percent+'%';
+  $('flashDumpBytes').textContent=safeBytes+' / '+safeTotal;
+  if(message)setFlashDumpMessage(message);
+}
+function resetFlashDumpView(){
+  flashDumpBuffer=null;
+  $('flashDumpHead').innerHTML='';
+  $('flashDumpRows').innerHTML='';
+  $('flashDumpView').classList.add('hidden');
+  $('flashDumpEmpty').classList.remove('hidden');
+  setFlashDumpProgress(0,FLASH_DUMP_TOTAL_BYTES,'等待 flash回读');
+  updateFlashDumpButtons();
+}
+function buildFlashDumpHeader(){
+  const cells=['<th class="flash-dump-row">行号</th>'];
+  for(let col=0;col<FLASH_DUMP_ROW_BYTES;col++){
+    cells.push('<th>'+col+'</th>');
+  }
+  return '<tr>'+cells.join('')+'</tr>';
+}
+function renderFlashDumpData(buffer){
+  const bytes=new Uint8Array(buffer);
+  const rows=[];
+  $('flashDumpHead').innerHTML=buildFlashDumpHeader();
+  for(let offset=0,row=0;offset<bytes.length;offset+=FLASH_DUMP_ROW_BYTES,row++){
+    const end=Math.min(offset+FLASH_DUMP_ROW_BYTES,bytes.length);
+    const cells=['<td class="flash-dump-row">'+row+'</td>'];
+    for(let i=offset;i<end;i++){
+      cells.push('<td class="flash-dump-byte">'+HEX_TABLE[bytes[i]]+'</td>');
+    }
+    rows.push('<tr>'+cells.join('')+'</tr>');
+  }
+  $('flashDumpRows').innerHTML=rows.join('');
+  $('flashDumpEmpty').classList.add('hidden');
+  $('flashDumpView').classList.remove('hidden');
+  $('flashDumpBytes').textContent=bytes.length+' / '+FLASH_DUMP_TOTAL_BYTES;
+}
+async function getFlashDumpStatus(opId){
+  const r=await fetch('/api/flash-dump/status?id='+encodeURIComponent(opId),{cache:'no-store'});
+  let j=null;
+  try{j=await r.json();}catch(e){j={ok:false,error:r.statusText};}
+  if(r.status===401){location.href='/';return null;}
+  if(!r.ok||!j.ok)throw new Error((j&&j.error)||r.statusText);
+  return j;
+}
+async function fetchFlashDumpData(){
+  const r=await fetch('/api/flash-dump/data',{cache:'no-store'});
+  if(r.status===401){location.href='/';return null;}
+  if(!r.ok)throw new Error(await readErr(r));
+  const buffer=await r.arrayBuffer();
+  if(buffer.byteLength!==FLASH_DUMP_TOTAL_BYTES){
+    throw new Error('flash回读 数据长度异常：'+buffer.byteLength+' 字节');
+  }
+  return buffer;
+}
+async function actFlashDump(){
+  if(flashDumpBusy)return;
+  resetFlashDumpView();
+  setFlashDumpBusy(true);
+  try{
+    showToast('正在启动 flash回读...',1200);
+    const started=await postForm('/api/flash-dump/start',{});
+    if(!started||!started.opId)return;
+    flashDumpOpId=started.opId;
+    while(true){
+      const status=await getFlashDumpStatus(flashDumpOpId);
+      if(!status)return;
+      setFlashDumpProgress(status.bytesRead,status.totalBytes,(status.message||'正在读取 flash回读').replace(/flash dump/g,'flash回读'));
+      if(status.state==='done')break;
+      if(status.state==='canceled'){
+        setFlashDumpMessage((status.message||'flash回读 已取消').replace(/flash dump/g,'flash回读'),true);
+        return;
+      }
+      if(status.state==='failed')throw new Error((status.error||status.message||'flash回读 失败').replace(/flash dump/g,'flash回读'));
+      if(status.state!=='running')throw new Error((status.error||status.message||'flash回读 状态异常').replace(/flash dump/g,'flash回读'));
+      await sleep(350);
+    }
+    setFlashDumpMessage('正在获取 flash回读 数据');
+    const buffer=await fetchFlashDumpData();
+    if(!buffer)return;
+    flashDumpBuffer=buffer;
+    renderFlashDumpData(buffer);
+    setFlashDumpProgress(FLASH_DUMP_TOTAL_BYTES,FLASH_DUMP_TOTAL_BYTES,'flash回读 完成');
+    showToast('flash回读 完成');
+  }catch(e){
+    setFlashDumpMessage('flash回读 失败：'+e.message,true);
+    showToast('flash回读 失败：'+e.message,1800);
+  }finally{
+    setFlashDumpBusy(false);
+  }
+}
+function exportFlashDump(){
+  if(!flashDumpBuffer)return;
+  const blob=new Blob([flashDumpBuffer],{type:'application/octet-stream'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='flash_dump_512kb.bin';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 async function checkAuth(){try{const r=await fetch('/api/auth/status');if(!r.ok){location.href='/';return;}await loadFiles();}catch(e){location.href='/'}}
 function isBin(f){return !f.is_dir&&(f.is_param_bin||/\.bin$/i.test(f.name||''));}
 function boardLabel(f){return f.boardName||f.displayName||'未识别板卡配置'}
@@ -1769,12 +2093,15 @@ function switchPage(page){
   currentPage=page;
   $('filePage').classList.toggle('hidden',page!=='files');
   $('paramPage').classList.toggle('hidden',page!=='params');
+  $('flashDumpPage').classList.toggle('hidden',page!=='flashDump');
   $('aboutPage').classList.toggle('hidden',page!=='about');
   $('navFiles').classList.toggle('active',page==='files');
   $('navParams').classList.toggle('active',page==='params');
+  $('navFlashDump').classList.toggle('active',page==='flashDump');
   $('navAbout').classList.toggle('active',page==='about');
   const root=document.querySelector('.root');
   root.classList.toggle('page-files',page==='files');
+  root.classList.toggle('page-flash-dump',page==='flashDump');
   root.classList.toggle('page-about',page==='about');
   if(page==='about'){
     switchAboutSection('intro');
