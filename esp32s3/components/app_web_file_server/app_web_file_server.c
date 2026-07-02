@@ -1,5 +1,6 @@
 #include "app_web_file_server.h"
 
+#include "app_web_assets.h"
 #include "app_web_auth.h"
 #include "app_web_common.h"
 #include "app_web_files.h"
@@ -29,7 +30,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     config.server_port = 80;
     config.uri_match_fn = httpd_uri_match_wildcard;
     config.stack_size = 12288;
-    config.max_uri_handlers = 20;
+    config.max_uri_handlers = 24;
     config.max_open_sockets = 4;
     config.lru_purge_enable = true;
     config.recv_wait_timeout = 60;
@@ -48,6 +49,7 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     const httpd_uri_t auth_status_uri = {.uri = "/api/auth/status", .method = HTTP_GET, .handler = auth_status_handler};
     const httpd_uri_t app_info_uri = {.uri = "/api/app/info", .method = HTTP_GET, .handler = app_info_handler};
     const httpd_uri_t favicon_uri = {.uri = "/favicon.ico", .method = HTTP_GET, .handler = favicon_handler};
+    const httpd_uri_t assets_uri = {.uri = "/assets/*", .method = HTTP_GET, .handler = assets_handler};
     const httpd_uri_t files_uri = {.uri = "/files", .method = HTTP_GET, .handler = files_handler};
     const httpd_uri_t download_uri = {.uri = "/download", .method = HTTP_GET, .handler = download_handler};
     const httpd_uri_t upload_uri = {.uri = "/upload", .method = HTTP_POST, .handler = upload_handler};
@@ -75,6 +77,8 @@ esp_err_t app_web_file_server_start(const char *mount_point)
     ESP_GOTO_ON_ERROR(ret, err_stop, APP_WEB_TAG, "register /api/app/info failed");
     ret = httpd_register_uri_handler(s_server, &favicon_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, APP_WEB_TAG, "register /favicon.ico failed");
+    ret = httpd_register_uri_handler(s_server, &assets_uri);
+    ESP_GOTO_ON_ERROR(ret, err_stop, APP_WEB_TAG, "register /assets/* failed");
     ret = httpd_register_uri_handler(s_server, &files_uri);
     ESP_GOTO_ON_ERROR(ret, err_stop, APP_WEB_TAG, "register /files failed");
     ret = httpd_register_uri_handler(s_server, &download_uri);

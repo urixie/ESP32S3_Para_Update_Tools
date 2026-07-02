@@ -34,6 +34,7 @@ esp_err_t get_query_value(httpd_req_t *req, const char *key, char *out, size_t o
 bool valid_upload_name(const char *name);
 void json_escape_send(httpd_req_t *req, const char *text);
 esp_err_t send_json_error(httpd_req_t *req, const char *status, const char *message);
+size_t app_web_embedded_text_size(const uint8_t *start, const uint8_t *end);
 esp_err_t send_embedded_html(httpd_req_t *req, const uint8_t *start, const uint8_t *end);
 esp_err_t redirect_to_login(httpd_req_t *req);
 esp_err_t read_form_body(httpd_req_t *req, char *body, size_t body_size);

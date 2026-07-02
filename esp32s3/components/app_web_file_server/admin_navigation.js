@@ -1,0 +1,40 @@
+function switchPage(page){
+  currentPage=page;
+  $('filePage').classList.toggle('hidden',page!=='files');
+  $('paramPage').classList.toggle('hidden',page!=='params');
+  $('flashDumpPage').classList.toggle('hidden',page!=='flashDump');
+  $('aboutPage').classList.toggle('hidden',page!=='about');
+  $('navFiles').classList.toggle('active',page==='files');
+  $('navParams').classList.toggle('active',page==='params');
+  $('navFlashDump').classList.toggle('active',page==='flashDump');
+  $('navAbout').classList.toggle('active',page==='about');
+  const root=document.querySelector('.root');
+  root.classList.toggle('page-files',page==='files');
+  root.classList.toggle('page-flash-dump',page==='flashDump');
+  root.classList.toggle('page-about',page==='about');
+  if(page==='about'){
+    switchAboutSection('intro');
+  }
+  if(page==='flashDump'&&currentAdvancedFeature==='flashRead'&&flashDumpBuffer){
+    scheduleFlashDumpStickySync();
+  }
+  if(page==='params'){
+    if(!selected&&binFiles.length>0){
+      selectBin(binFiles[0].path,true);
+    }else{
+      renderBins();
+      if(selected){
+        const state=getCurrentBoardState();
+        if(state&&state.parsed){
+          currentParamType=state.currentParamType||'control';
+          renderParamTable();
+          $('result').classList.remove('hidden');
+          $('parseErr').classList.add('hidden');
+          $('hint').textContent='';
+        }else{
+          parseSelected();
+        }
+      }
+    }
+  }
+}

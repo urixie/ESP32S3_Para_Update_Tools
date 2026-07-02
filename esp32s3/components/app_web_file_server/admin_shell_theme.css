@@ -1,0 +1,268 @@
+/* ===== State Grid industrial power-console theme ===== */
+body {
+  background:
+    linear-gradient(rgba(33, 212, 253, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 83, .035) 1px, transparent 1px),
+    radial-gradient(circle at 16% -10%, rgba(0, 166, 80, .18), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(33, 212, 253, .12), transparent 30%),
+    linear-gradient(180deg, #06110E 0%, #071713 48%, #050D0B 100%);
+  background-size: 34px 34px, 34px 34px, auto, auto, auto;
+}
+
+button,
+.file-label {
+  border-color: var(--line);
+  background: linear-gradient(180deg, #132C25, #0B1C17);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(242, 255, 249, .05);
+}
+
+button:hover:not(:disabled),
+.file-label:hover {
+  border-color: rgba(33, 212, 253, .42);
+  background: linear-gradient(180deg, #17362E, #0D241E);
+}
+
+.primary {
+  background: linear-gradient(135deg, #00A650, #008C45);
+  color: #F5FFF9;
+  box-shadow: 0 0 0 1px rgba(0, 200, 83, .2), 0 12px 28px rgba(0, 80, 38, .28);
+}
+
+.left-nav,
+.side {
+  border-right-color: rgba(43, 90, 78, .72);
+  background:
+    linear-gradient(180deg, rgba(7, 23, 19, .98), rgba(4, 13, 11, .99)),
+    linear-gradient(90deg, rgba(0, 200, 83, .08), transparent 42%);
+  box-shadow: 18px 0 48px rgba(0, 0, 0, .28), inset -1px 0 0 rgba(33, 212, 253, .08);
+}
+
+.nav-brand {
+  border-bottom-color: rgba(43, 90, 78, .78);
+}
+
+.logo {
+  filter: drop-shadow(0 4px 14px rgba(0, 200, 83, .25));
+}
+
+.logo .logo-accent {
+  fill: var(--green);
+}
+
+.brand-sub {
+  color: #CDEDE2;
+}
+
+.nav-btn {
+  border-radius: 8px;
+  color: #A6C7BC;
+}
+
+.nav-btn:hover {
+  border-color: rgba(33, 212, 253, .35);
+  background: rgba(16, 40, 32, .78);
+}
+
+.nav-btn.active {
+  border-color: rgba(0, 200, 83, .76);
+  background: linear-gradient(135deg, rgba(0, 166, 80, .34), rgba(33, 212, 253, .09));
+  box-shadow: inset 3px 0 0 var(--green), 0 10px 28px rgba(0, 60, 34, .22);
+  color: var(--text);
+}
+
+.nav-icon {
+  border: 1px solid rgba(43, 90, 78, .76);
+  background: linear-gradient(180deg, #102820, #0A1D18);
+  color: var(--cyan);
+  box-shadow: inset 0 0 12px rgba(33, 212, 253, .08);
+}
+
+.panel,
+.toolbar,
+.main,
+.action-pane {
+  border-color: rgba(43, 90, 78, .68);
+  background: linear-gradient(180deg, rgba(13, 31, 26, .97), rgba(7, 19, 16, .98));
+  box-shadow: 0 18px 54px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(242, 255, 249, .04);
+}
+
+#paramPage .action-pane {
+  border-left: 1px solid rgba(43, 90, 78, .7);
+  background: linear-gradient(180deg, rgba(13, 31, 26, .4), rgba(6, 17, 14, .1));
+}
+
+.table,
+.param-table .table-inner,
+.root.page-files #fileTable {
+  border-color: rgba(43, 90, 78, .82);
+  background: rgba(6, 17, 14, .72);
+}
+
+th,
+.param-table th,
+.root.page-files #fileTable th {
+  background: linear-gradient(180deg, #102820, #0B1E18);
+  color: var(--gold);
+  border-bottom-color: rgba(245, 179, 1, .22);
+}
+
+td {
+  border-bottom-color: rgba(30, 58, 52, .76);
+}
+
+td.name,
+.value {
+  color: #E8FFF6;
+}
+
+.badge {
+  border-color: rgba(0, 200, 83, .42);
+  background: linear-gradient(180deg, #102820, #0A1E19);
+  color: #CFFFEA;
+  box-shadow: inset 0 0 0 1px rgba(33, 212, 253, .05);
+}
+
+.empty {
+  border-color: rgba(43, 90, 78, .78);
+  background: rgba(6, 17, 14, .42);
+  color: var(--muted);
+}
+
+.bin {
+  border-radius: 8px;
+  background: linear-gradient(180deg, #102820, #091B16);
+  border-color: rgba(30, 58, 52, .62);
+}
+
+.bin:hover {
+  border-color: rgba(33, 212, 253, .38);
+  background: linear-gradient(180deg, #14362D, #0B241D);
+}
+
+.bin.active {
+  border-color: rgba(0, 200, 83, .82);
+  background: linear-gradient(135deg, rgba(0, 166, 80, .32), rgba(16, 40, 32, .96));
+  box-shadow: inset 4px 0 0 var(--green), inset 0 0 0 1px rgba(0, 200, 83, .18), 0 12px 28px rgba(0, 50, 28, .28);
+}
+
+.bin-count,
+.subtab .num,
+.msg {
+  color: var(--gold);
+}
+
+.subtab {
+  border-radius: 8px;
+  border-color: rgba(30, 58, 52, .78);
+  background: rgba(8, 24, 20, .34);
+}
+
+.subtab:hover {
+  border-color: rgba(33, 212, 253, .35);
+  color: #DDFBF2;
+}
+
+.subtab.active {
+  border-color: rgba(0, 200, 83, .82);
+  background: linear-gradient(135deg, rgba(0, 166, 80, .32), rgba(33, 212, 253, .08));
+  box-shadow: inset 3px 0 0 var(--green), 0 10px 24px rgba(0, 55, 30, .22);
+  color: var(--text);
+}
+
+.param-value-input {
+  width: 124px;
+  max-width: 100%;
+  height: 34px;
+  padding: 6px 10px;
+  border: 1px solid rgba(43, 90, 78, .9);
+  border-radius: 6px;
+  outline: none;
+  background: linear-gradient(180deg, #071713, #06110E);
+  color: #EFFFF8;
+  box-shadow: inset 0 1px 0 rgba(242, 255, 249, .05), inset 0 0 0 1px rgba(0, 200, 83, .04);
+  font-weight: 800;
+}
+
+.param-value-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-unit {
+  color: var(--muted);
+  font-weight: 800;
+  min-width: 24px;
+}
+
+.param-value-input:hover {
+  border-color: rgba(33, 212, 253, .56);
+}
+
+.param-value-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(0, 200, 83, .18), 0 0 20px rgba(33, 212, 253, .08), inset 0 0 0 1px rgba(0, 200, 83, .12);
+}
+
+.action-btn {
+  border-radius: 8px;
+  border-color: rgba(43, 90, 78, .86);
+  background: linear-gradient(180deg, #143029, #0A1D18);
+  color: #EAFEF6;
+  box-shadow: inset 0 1px 0 rgba(242, 255, 249, .05);
+}
+
+.action-btn:hover:not(:disabled) {
+  border-color: rgba(33, 212, 253, .55);
+  background: linear-gradient(180deg, #173A31, #0C261F);
+}
+
+#btnDefault {
+  background: linear-gradient(180deg, #132C25, #091A16);
+}
+
+#btnReadback {
+  border-color: rgba(33, 212, 253, .78);
+  color: #DDF9FF;
+  background: linear-gradient(180deg, rgba(33, 212, 253, .10), rgba(7, 23, 19, .88));
+}
+
+#btnReadback:hover:not(:disabled) {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px rgba(33, 212, 253, .14), 0 12px 28px rgba(33, 212, 253, .08);
+}
+
+#btnDownload {
+  border-color: rgba(0, 200, 83, .95);
+  background: linear-gradient(180deg, #00C853, #008D46);
+  color: #F6FFF9;
+  box-shadow: 0 0 0 1px rgba(0, 200, 83, .28), 0 16px 32px rgba(0, 85, 42, .34);
+}
+
+#btnDownload:hover:not(:disabled) {
+  background: linear-gradient(180deg, #16D966, #00A650);
+  border-color: #48F28B;
+}
+
+.action-btn:disabled,
+#btnDownload:disabled,
+#btnReadback:disabled {
+  opacity: .42;
+  box-shadow: none;
+}
+
+.toast {
+  border-color: rgba(0, 200, 83, .48);
+  background: linear-gradient(180deg, rgba(13, 31, 26, .98), rgba(6, 17, 14, .98));
+  color: #DFFFF0;
+}
+
+.nav-foot {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-foot button {
+  width: 100%;
+}

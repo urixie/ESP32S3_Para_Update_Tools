@@ -1,0 +1,77 @@
+/* ===== File page: fixed list header + body-only vertical scroll ===== */
+.root.page-files .file-shell {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.root.page-files .file-list-pane {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.root.page-files .file-list-pane .view-title {
+  flex: 0 0 auto;
+  margin-bottom: 12px;
+}
+
+.root.page-files #fileTable {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.root.page-files #fileTable table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.root.page-files #fileTable th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: #121d2d;
+}
+
+.root.page-files #fileTable th:nth-child(1),
+.root.page-files #fileTable td:nth-child(1) {
+  width: auto;
+}
+
+.root.page-files #fileTable th:nth-child(2),
+.root.page-files #fileTable td:nth-child(2) {
+  width: 150px;
+}
+
+.root.page-files #fileTable td.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 22px;
+  z-index: 9999;
+  transform: translate(-50%, -12px);
+  min-width: 180px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 11px 16px;
+  border: 1px solid rgba(158, 240, 184, .46);
+  border-radius: 10px;
+  background: rgba(15, 23, 36, .96);
+  color: #d7ffe3;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .34);
+  font-weight: 800;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

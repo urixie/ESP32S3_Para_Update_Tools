@@ -1,0 +1,316 @@
+/* ===== Typography aligned with desktop tools ===== */
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 14px;
+}
+
+body {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  font-size: 1rem;
+}
+
+button,
+input,
+.file-label {
+  font: inherit;
+}
+
+button,
+.file-label,
+.action-btn {
+  font-size: .82rem;
+}
+
+h1 {
+  font-size: 1.35rem;
+}
+
+.view-title h2,
+.side h2,
+.main h2,
+.about-head h2,
+.about-page-head h2 {
+  font-size: 1.14rem;
+}
+
+.sub,
+p,
+.muted,
+.msg,
+.about-head p,
+.about-page-head p {
+  font-size: .86rem;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  font-size: .82rem;
+}
+
+th,
+.param-table th,
+.root.page-files #fileTable th {
+  font-size: .72rem;
+  text-align: center;
+}
+
+.nav-btn {
+  min-height: 46px;
+  padding: 10px;
+  font-size: .84rem;
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  font-size: .82rem;
+}
+
+.brand-sub,
+.bin-name {
+  font-size: .86rem;
+}
+
+.bin-count,
+.bin-meta,
+.badge,
+.subtab,
+.bin-hint,
+.param-unit {
+  font-size: .78rem;
+}
+
+.bin {
+  min-height: 62px;
+  max-height: 78px;
+  padding: 9px 11px;
+}
+
+.subtab {
+  padding: 9px 10px;
+}
+
+.param-table table {
+  width: max-content;
+  min-width: 0;
+  margin: 0;
+  table-layout: fixed;
+  font-size: .82rem;
+}
+
+.param-table th,
+.param-table td {
+  padding: .22rem .32rem;
+}
+
+.param-table th:first-child,
+.param-table td.name {
+  width: 184px;
+  max-width: 184px;
+}
+
+.param-table th:nth-child(2),
+.param-table td.value {
+  width: 148px;
+  max-width: 148px;
+}
+
+.param-table td.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.param-value-input {
+  width: 104px;
+  height: 30px;
+  padding: 4px 8px;
+  font-size: .78rem;
+}
+
+.param-value-cell {
+  gap: 6px;
+}
+
+.about-kpi-value,
+.about-card h3,
+.about-section h3 {
+  font-size: 1rem;
+}
+
+.about-kpi-label,
+.about-card p,
+.about-section,
+.about-meta li,
+.about-flow li {
+  font-size: .82rem;
+}
+
+.root {
+  grid-template-columns: 152px 234px minmax(0, 1fr);
+}
+
+.root.page-files {
+  grid-template-columns: 152px minmax(0, 1fr);
+}
+
+.left-nav {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.param-shell {
+  grid-template-columns: minmax(0, 1fr) 90px;
+  gap: 10px;
+}
+
+.result-layout {
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.advanced-shell {
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.param-tabs {
+  width: 104px;
+}
+
+.advanced-tabs {
+  width: 64px;
+}
+
+.subtab {
+  min-height: 40px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.action-pane {
+  width: 90px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.action-pane .action-btn {
+  width: 100%;
+  padding-left: 6px;
+  padding-right: 6px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.param-table th:nth-child(1),
+.param-table th:nth-child(3),
+.param-table td.name {
+  width: 172px;
+  max-width: 172px;
+}
+
+.param-table th:nth-child(2),
+.param-table th:nth-child(4),
+.param-table td.value {
+  width: 138px;
+  max-width: 138px;
+}
+
+.param-table th:nth-child(3),
+.param-table td:nth-child(3) {
+  border-left: 1px solid rgba(43, 90, 78, .82);
+  padding-left: 1.4rem;
+}
+
+.param-table td.param-empty-cell {
+  color: transparent;
+  pointer-events: none;
+}
+
+.root.page-files .file-shell {
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.root.page-files .file-upload-pane .muted {
+  min-height: 72px;
+  max-height: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.root.page-files #fileTable table {
+  width: max-content;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.root.page-files #fileTable th:nth-child(1),
+.root.page-files #fileTable th:nth-child(3),
+.root.page-files #fileTable td.file-name-cell {
+  width: 220px;
+  max-width: 220px;
+}
+
+.root.page-files #fileTable th:nth-child(2),
+.root.page-files #fileTable th:nth-child(4),
+.root.page-files #fileTable td.file-action-cell {
+  width: 76px;
+  max-width: 76px;
+}
+
+.root.page-files #fileTable th:nth-child(3),
+.root.page-files #fileTable td:nth-child(3) {
+  border-left: 1px solid rgba(43, 90, 78, .82);
+  padding-left: 1.2rem;
+}
+
+.root.page-files #fileTable td.file-name-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.root.page-files #fileTable .file-actions {
+  gap: 0;
+  justify-content: flex-start;
+}
+
+.root.page-files #fileTable .file-actions button {
+  padding: 6px 10px;
+}
+
+.root.page-files #fileTable td.file-empty-cell {
+  color: transparent;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .root,
+  .root.page-files,
+  .root.page-flash-dump {
+    grid-template-columns: 1fr;
+  }
+
+  .param-shell,
+  .result-layout,
+  .advanced-shell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .param-tabs,
+  .advanced-tabs,
+  .action-pane {
+    width: 100%;
+  }
+
+  .action-pane {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .root.page-files .file-shell {
+    grid-template-columns: 1fr;
+  }
+}

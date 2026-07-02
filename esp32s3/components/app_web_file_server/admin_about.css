@@ -1,0 +1,118 @@
+.about-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.about-page .about-menu {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.about-page .about-content {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 4px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.about-page-head {
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid rgba(0, 200, 83, .34);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(33, 212, 253, .026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 200, 83, .026) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(13, 31, 26, .92), rgba(7, 23, 19, .76));
+  background-size: 24px 24px, 24px 24px, auto;
+}
+
+.about-page-head h2 {
+  margin: 0;
+  color: #F2FFF9;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.about-page-head p {
+  margin-top: 6px;
+  color: #BFEADC;
+  line-height: 1.55;
+}
+
+.about-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.about-flow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.about-flow h4,
+.about-note-card h4 {
+  margin: 0 0 8px;
+  color: #E8FFF6;
+  font-size: 15px;
+}
+
+.about-note-card {
+  border: 1px solid rgba(245, 179, 1, .26);
+  border-radius: 12px;
+  padding: 13px;
+  background: rgba(245, 179, 1, .08);
+  color: #FFEAB0;
+  line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+  .about-shell,
+  .about-flow,
+  .about-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-shell {
+    overflow: visible;
+  }
+
+  .about-page .about-menu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .about-page .about-menu-title {
+    grid-column: 1 / -1;
+  }
+
+  #aboutPage.about-page,
+  .about-page .about-content {
+    height: auto;
+    overflow: visible;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .about-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .about-page .about-menu {
+    grid-template-columns: 1fr;
+  }
+}

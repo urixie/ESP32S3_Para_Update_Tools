@@ -235,12 +235,25 @@ esp_err_t send_json_error(httpd_req_t *req, const char *status, const char *mess
     return httpd_resp_send_chunk(req, NULL, 0);
 }
 
+size_t app_web_embedded_text_size(const uint8_t *start, const uint8_t *end)
+{
+    if (start == NULL || end == NULL || end <= start) {
+        return 0;
+    }
+
+    size_t size = (size_t)(end - start);
+    if (size > 0 && start[size - 1] == '\0') {
+        size--;
+    }
+    return size;
+}
+
 esp_err_t send_embedded_html(httpd_req_t *req, const uint8_t *start, const uint8_t *end)
 {
     httpd_resp_set_type(req, "text/html; charset=utf-8");
     set_no_store(req);
     set_connection_close(req);
-    return httpd_resp_send(req, (const char *)start, end - start);
+    return httpd_resp_send(req, (const char *)start, app_web_embedded_text_size(start, end));
 }
 
 esp_err_t redirect_to_login(httpd_req_t *req)
