@@ -30,16 +30,34 @@
 #define APP_WEB_PARAM_FORM_BUF_SIZE 1536
 #define APP_WEB_PARAM_TIME_BASE_NS 50U
 #define APP_WEB_PARAM_MAX_NS_VALUE ((uint32_t)UINT16_MAX * APP_WEB_PARAM_TIME_BASE_NS)
-#define WEB_AUTH_USER "admin"
-#define WEB_AUTH_PASS "admin"
 #define WEB_AUTH_SESSION_BYTES 32
 #define WEB_AUTH_SESSION_HEX_LEN (WEB_AUTH_SESSION_BYTES * 2)
 #define WEB_AUTH_SESSION_TIMEOUT_US (30LL * 60LL * 1000000LL)
+
+typedef enum {
+    WEB_AUTH_ROLE_NONE = 0,
+    WEB_AUTH_ROLE_USER,
+    WEB_AUTH_ROLE_ADMIN,
+} web_auth_role_t;
+
+typedef struct {
+    const char *username;
+    const char *password;
+    web_auth_role_t role;
+    const char *role_name;
+} web_auth_account_t;
+
+static const web_auth_account_t s_web_auth_accounts[] = {
+    {.username = "admin", .password = "admin", .role = WEB_AUTH_ROLE_ADMIN, .role_name = "admin"},
+    {.username = "user", .password = "123", .role = WEB_AUTH_ROLE_USER, .role_name = "user"},
+};
 
 static const char *TAG = "web_param";
 static httpd_handle_t s_server;
 static char s_mount_point[64];
 static char s_session_id[WEB_AUTH_SESSION_HEX_LEN + 1];
+static char s_session_user[32];
+static web_auth_role_t s_session_role;
 static bool s_session_valid;
 static int64_t s_session_expire_us;
 
@@ -47,6 +65,8 @@ extern const uint8_t login_html_start[] asm("_binary_login_html_start");
 extern const uint8_t login_html_end[] asm("_binary_login_html_end");
 extern const uint8_t app_html_start[] asm("_binary_app_html_start");
 extern const uint8_t app_html_end[] asm("_binary_app_html_end");
+extern const uint8_t user_app_html_start[] asm("_binary_user_app_html_start");
+extern const uint8_t user_app_html_end[] asm("_binary_user_app_html_end");
 
 static void log_heap_state(const char *where)
 {
@@ -93,6 +113,12 @@ static void log_heap_state(const char *where)
 static void set_connection_close(httpd_req_t *req)
 {
     httpd_resp_set_hdr(req, "Connection", "close");
+}
+
+static void set_no_store(httpd_req_t *req)
+{
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_set_hdr(req, "Pragma", "no-cache");
 }
 
 static int hex_value(char c)
@@ -242,6 +268,7 @@ static esp_err_t send_json_error(httpd_req_t *req, const char *status, const cha
 {
     httpd_resp_set_status(req, status);
     httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_no_store(req);
     set_connection_close(req);
     httpd_resp_sendstr_chunk(req, "{\"ok\":false,\"error\":\"");
     json_escape_send(req, message);
@@ -252,6 +279,7 @@ static esp_err_t send_json_error(httpd_req_t *req, const char *status, const cha
 static esp_err_t send_embedded_html(httpd_req_t *req, const uint8_t *start, const uint8_t *end)
 {
     httpd_resp_set_type(req, "text/html; charset=utf-8");
+    set_no_store(req);
     set_connection_close(req);
     return httpd_resp_send(req, (const char *)start, end - start);
 }
@@ -260,6 +288,7 @@ static esp_err_t redirect_to_login(httpd_req_t *req)
 {
     httpd_resp_set_status(req, "302 Found");
     httpd_resp_set_hdr(req, "Location", "/");
+    set_no_store(req);
     set_connection_close(req);
     return httpd_resp_send(req, NULL, 0);
 }
@@ -272,14 +301,46 @@ static void web_auth_refresh_expire(void)
 static void web_auth_clear_session(void)
 {
     memset(s_session_id, 0, sizeof(s_session_id));
+    memset(s_session_user, 0, sizeof(s_session_user));
+    s_session_role = WEB_AUTH_ROLE_NONE;
     s_session_valid = false;
     s_session_expire_us = 0;
 }
 
-static void web_auth_create_session(void)
+static const web_auth_account_t *web_auth_find_account(const char *username, const char *password)
+{
+    for (size_t i = 0; i < sizeof(s_web_auth_accounts) / sizeof(s_web_auth_accounts[0]); i++) {
+        const web_auth_account_t *account = &s_web_auth_accounts[i];
+        if (strcmp(username, account->username) == 0 &&
+            strcmp(password, account->password) == 0) {
+            return account;
+        }
+    }
+    return NULL;
+}
+
+static const char *web_auth_role_name(web_auth_role_t role)
+{
+    switch (role) {
+    case WEB_AUTH_ROLE_ADMIN:
+        return "admin";
+    case WEB_AUTH_ROLE_USER:
+        return "user";
+    case WEB_AUTH_ROLE_NONE:
+    default:
+        return "none";
+    }
+}
+
+static void web_auth_create_session(const web_auth_account_t *account)
 {
     uint8_t random_bytes[WEB_AUTH_SESSION_BYTES];
     static const char hex[] = "0123456789abcdef";
+
+    if (account == NULL) {
+        web_auth_clear_session();
+        return;
+    }
 
     esp_fill_random(random_bytes, sizeof(random_bytes));
     for (size_t i = 0; i < sizeof(random_bytes); i++) {
@@ -287,6 +348,8 @@ static void web_auth_create_session(void)
         s_session_id[i * 2 + 1] = hex[random_bytes[i] & 0x0f];
     }
     s_session_id[WEB_AUTH_SESSION_HEX_LEN] = '\0';
+    snprintf(s_session_user, sizeof(s_session_user), "%s", account->username);
+    s_session_role = account->role;
     s_session_valid = true;
     web_auth_refresh_expire();
 }
@@ -320,7 +383,7 @@ static bool cookie_has_sid(const char *cookie_header, const char *sid)
     return false;
 }
 
-static bool web_auth_is_logged_in(httpd_req_t *req)
+static bool web_auth_get_session(httpd_req_t *req, web_auth_role_t *role)
 {
     if (!s_session_valid || s_session_id[0] == '\0') {
         return false;
@@ -348,8 +411,41 @@ static bool web_auth_is_logged_in(httpd_req_t *req)
 
     if (ok) {
         web_auth_refresh_expire();
+        if (role != NULL) {
+            *role = s_session_role;
+        }
     }
     return ok;
+}
+
+static bool web_auth_is_logged_in(httpd_req_t *req)
+{
+    return web_auth_get_session(req, NULL);
+}
+
+static esp_err_t require_logged_in(httpd_req_t *req, web_auth_role_t *role)
+{
+    web_auth_role_t current_role = WEB_AUTH_ROLE_NONE;
+    if (!web_auth_get_session(req, &current_role)) {
+        return send_json_error(req, "401 Unauthorized", "请先登录");
+    }
+    if (role != NULL) {
+        *role = current_role;
+    }
+    return ESP_OK;
+}
+
+static esp_err_t require_admin(httpd_req_t *req)
+{
+    web_auth_role_t role = WEB_AUTH_ROLE_NONE;
+    esp_err_t ret = require_logged_in(req, &role);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+    if (role != WEB_AUTH_ROLE_ADMIN) {
+        return send_json_error(req, "403 Forbidden", "当前账号无管理员权限");
+    }
+    return ESP_OK;
 }
 
 static esp_err_t read_form_body(httpd_req_t *req, char *body, size_t body_size)
@@ -387,6 +483,7 @@ static esp_err_t index_handler(httpd_req_t *req)
     if (web_auth_is_logged_in(req)) {
         httpd_resp_set_status(req, "302 Found");
         httpd_resp_set_hdr(req, "Location", "/app");
+        set_no_store(req);
         set_connection_close(req);
         return httpd_resp_send(req, NULL, 0);
     }
@@ -396,8 +493,15 @@ static esp_err_t index_handler(httpd_req_t *req)
 static esp_err_t app_handler(httpd_req_t *req)
 {
     log_heap_state("访问主页面前");
-    if (!web_auth_is_logged_in(req)) {
+    web_auth_role_t role = WEB_AUTH_ROLE_NONE;
+    if (!web_auth_get_session(req, &role)) {
         return redirect_to_login(req);
+    }
+    if (role == WEB_AUTH_ROLE_USER) {
+        return send_embedded_html(req, user_app_html_start, user_app_html_end);
+    }
+    if (role != WEB_AUTH_ROLE_ADMIN) {
+        return send_json_error(req, "403 Forbidden", "当前账号无权限访问页面");
     }
     return send_embedded_html(req, app_html_start, app_html_end);
 }
@@ -414,7 +518,8 @@ static esp_err_t login_handler(httpd_req_t *req)
         return send_json_error(req, "400 Bad Request", "登录请求格式错误");
     }
 
-    if (strcmp(username, WEB_AUTH_USER) != 0 || strcmp(password, WEB_AUTH_PASS) != 0) {
+    const web_auth_account_t *account = web_auth_find_account(username, password);
+    if (account == NULL) {
         return send_json_error(req, "401 Unauthorized", "用户名或密码错误");
     }
 
@@ -424,20 +529,31 @@ static esp_err_t login_handler(httpd_req_t *req)
 
     if (s_session_valid && s_session_id[0] != '\0') {
         if (web_auth_is_logged_in(req)) {
+            if (strcmp(s_session_user, account->username) != 0) {
+                return send_json_error(req, "409 Conflict", "当前浏览器已有其他用户登录，请先退出当前会话");
+            }
+            char response[96];
+            snprintf(response, sizeof(response), "{\"ok\":true,\"user\":\"%s\",\"role\":\"%s\"}",
+                     s_session_user, web_auth_role_name(s_session_role));
             httpd_resp_set_type(req, "application/json; charset=utf-8");
+            set_no_store(req);
             set_connection_close(req);
-            return httpd_resp_sendstr(req, "{\"ok\":true}");
+            return httpd_resp_sendstr(req, response);
         }
         return send_json_error(req, "409 Conflict", "已有用户登录，请先退出当前会话或等待会话过期");
     }
 
-    web_auth_create_session();
+    web_auth_create_session(account);
     char cookie[128];
     snprintf(cookie, sizeof(cookie), "sid=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=1800", s_session_id);
     httpd_resp_set_hdr(req, "Set-Cookie", cookie);
+    char response[96];
+    snprintf(response, sizeof(response), "{\"ok\":true,\"user\":\"%s\",\"role\":\"%s\"}",
+             s_session_user, web_auth_role_name(s_session_role));
     httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_no_store(req);
     set_connection_close(req);
-    return httpd_resp_sendstr(req, "{\"ok\":true}");
+    return httpd_resp_sendstr(req, response);
 }
 
 static esp_err_t logout_handler(httpd_req_t *req)
@@ -447,6 +563,7 @@ static esp_err_t logout_handler(httpd_req_t *req)
     }
     httpd_resp_set_hdr(req, "Set-Cookie", "sid=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax");
     httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_no_store(req);
     set_connection_close(req);
     return httpd_resp_sendstr(req, "{\"ok\":true}");
 }
@@ -454,9 +571,14 @@ static esp_err_t logout_handler(httpd_req_t *req)
 static esp_err_t auth_status_handler(httpd_req_t *req)
 {
     httpd_resp_set_type(req, "application/json; charset=utf-8");
-    if (web_auth_is_logged_in(req)) {
+    set_no_store(req);
+    web_auth_role_t role = WEB_AUTH_ROLE_NONE;
+    if (web_auth_get_session(req, &role)) {
+        char response[112];
+        snprintf(response, sizeof(response), "{\"ok\":true,\"login\":true,\"user\":\"%s\",\"role\":\"%s\"}",
+                 s_session_user, web_auth_role_name(role));
         set_connection_close(req);
-        return httpd_resp_sendstr(req, "{\"ok\":true,\"login\":true,\"user\":\"admin\"}");
+        return httpd_resp_sendstr(req, response);
     }
     httpd_resp_set_status(req, "401 Unauthorized");
     set_connection_close(req);
@@ -501,14 +623,16 @@ static void format_app_build_time(char *out, size_t out_size)
 
 static esp_err_t app_info_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char build_time[40] = {0};
     format_app_build_time(build_time, sizeof(build_time));
 
     httpd_resp_set_type(req, "application/json; charset=utf-8");
+    set_no_store(req);
     set_connection_close(req);
     httpd_resp_sendstr_chunk(req, "{\"ok\":true,\"buildTime\":\"");
     json_escape_send(req, build_time);
@@ -689,8 +813,9 @@ static esp_err_t list_dir_entries(httpd_req_t *req, const char *relative_dir, bo
 static esp_err_t files_handler(httpd_req_t *req)
 {
     log_heap_state("读取文件列表前");
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     httpd_resp_set_type(req, "application/json; charset=utf-8");
@@ -761,8 +886,9 @@ static esp_err_t stream_file(httpd_req_t *req, const char *full_path, bool attac
 
 static esp_err_t download_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char raw_path[APP_WEB_MAX_PATH];
@@ -784,8 +910,9 @@ static esp_err_t download_handler(httpd_req_t *req)
 
 static esp_err_t upload_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     if (req->content_len <= 0) {
@@ -922,8 +1049,9 @@ static esp_err_t upload_handler(httpd_req_t *req)
 
 static esp_err_t delete_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char body[APP_WEB_MAX_PATH];
@@ -1120,8 +1248,9 @@ static esp_err_t parse_param_values(const char *text,
 
 static esp_err_t bin_parse_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char raw_path[APP_WEB_MAX_PATH];
@@ -1306,8 +1435,9 @@ static esp_err_t send_param_board_status_json(httpd_req_t *req,
 
 static esp_err_t param_readback_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char body[APP_WEB_PARAM_FORM_BUF_SIZE];
@@ -1351,8 +1481,9 @@ static esp_err_t param_readback_handler(httpd_req_t *req)
 
 static esp_err_t param_connect_cancel_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     app_param_board_cancel_connect();
@@ -1363,8 +1494,9 @@ static esp_err_t param_connect_cancel_handler(httpd_req_t *req)
 
 static esp_err_t param_status_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char id_text[24] = {0};
@@ -1408,8 +1540,9 @@ static esp_err_t param_status_handler(httpd_req_t *req)
 
 static esp_err_t param_download_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_logged_in(req, NULL);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char body[APP_WEB_PARAM_FORM_BUF_SIZE];
@@ -1484,8 +1617,9 @@ static esp_err_t param_download_handler(httpd_req_t *req)
 
 static esp_err_t flash_dump_start_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char err_msg[APP_PARAM_BOARD_ERR_MSG_SIZE] = {0};
@@ -1538,8 +1672,9 @@ static esp_err_t send_flash_dump_status_json(httpd_req_t *req,
 
 static esp_err_t flash_dump_status_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     char id_text[24] = {0};
@@ -1567,8 +1702,9 @@ static esp_err_t flash_dump_status_handler(httpd_req_t *req)
 
 static esp_err_t flash_dump_data_handler(httpd_req_t *req)
 {
-    if (!web_auth_is_logged_in(req)) {
-        return send_json_error(req, "401 Unauthorized", "请先登录");
+    esp_err_t auth_ret = require_admin(req);
+    if (auth_ret != ESP_OK) {
+        return auth_ret;
     }
 
     const uint8_t *data = NULL;
