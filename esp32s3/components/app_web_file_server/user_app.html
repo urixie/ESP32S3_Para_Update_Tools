@@ -69,10 +69,9 @@
   <main class="app">
     <section id="paramPage" class="page">
       <section class="param-shell">
-        <section class="panel main">
-          <div class="head">
-            <div><h1 id="title">请选择一个板卡</h1><p id="hint" class="hint">左侧每个板卡配置对应一个参数配置界面。</p></div>
-            <button onclick="loadFiles()">刷新列表</button>
+        <section class="main">
+          <div class="head board-head-hidden hidden" aria-hidden="true">
+            <div><h2 id="title">请选择一个板卡</h2><p id="hint" class="hint">左侧每个板卡配置对应一个参数配置界面。</p></div>
           </div>
           <div id="parseErr" class="empty err hidden"></div>
           <div id="result" class="result hidden">
@@ -91,7 +90,7 @@
         <aside class="action-pane">
           <button class="action-btn" id="btnDefault" onclick="actDefault()" disabled>默认参数</button>
           <button class="action-btn" id="btnReadback" onclick="actReadback()" disabled>参数回读</button>
-          <button class="action-btn primary" id="btnDownload" onclick="actDownload()" disabled>参数下载</button>
+          <button class="action-btn" id="btnDownload" onclick="actDownload()" disabled>参数下载</button>
         </aside>
       </section>
     </section>
