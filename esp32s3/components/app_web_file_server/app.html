@@ -919,7 +919,7 @@ td.name,
 }
 
 .root.page-flash-dump {
-  grid-template-columns: 169px minmax(0, 1fr);
+  grid-template-columns: 152px minmax(0, 1fr);
 }
 
 .root.page-flash-dump .side {
@@ -939,7 +939,7 @@ td.name,
   min-height: 0;
   height: 100%;
   display: grid;
-  grid-template-columns: 148px minmax(0, 1fr);
+  grid-template-columns: 90px minmax(0, 1fr);
   gap: 14px;
   overflow: hidden;
 }
@@ -951,7 +951,14 @@ td.name,
   align-self: start;
 }
 
-.flash-read-panel {
+.advanced-tabs .subtab {
+  padding-left: 6px;
+  padding-right: 6px;
+  text-align: center;
+}
+
+.flash-read-panel,
+.flash-download-panel {
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -1157,7 +1164,7 @@ td.name,
 }
 
 .root.page-about {
-  grid-template-columns: 169px minmax(0, 1fr);
+  grid-template-columns: 152px minmax(0, 1fr);
 }
 
 .root.page-about .side {
@@ -1440,11 +1447,11 @@ th,
 }
 
 .root {
-  grid-template-columns: 169px 234px minmax(0, 1fr);
+  grid-template-columns: 152px 234px minmax(0, 1fr);
 }
 
 .root.page-files {
-  grid-template-columns: 169px minmax(0, 1fr);
+  grid-template-columns: 152px minmax(0, 1fr);
 }
 
 .left-nav {
@@ -1457,15 +1464,22 @@ th,
   gap: 10px;
 }
 
-.result-layout,
-.advanced-shell {
+.result-layout {
   grid-template-columns: 104px minmax(0, 1fr);
   gap: 10px;
 }
 
-.param-tabs,
-.advanced-tabs {
+.advanced-shell {
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.param-tabs {
   width: 104px;
+}
+
+.advanced-tabs {
+  width: 64px;
 }
 
 .subtab {
@@ -1735,9 +1749,10 @@ body::before {
     <section id="flashDumpPage" class="page flash-dump-page hidden">
       <section class="advanced-shell">
         <nav class="advanced-tabs">
-          <button id="tabFlashRead" class="subtab active" type="button">flash回读</button>
+          <button id="tabFlashRead" class="subtab active" type="button" onclick="switchAdvancedFeature('flashRead')">flash回读</button>
+          <button id="tabFlashDownload" class="subtab" type="button" onclick="switchAdvancedFeature('flashDownload')">flash下载</button>
         </nav>
-        <section class="flash-read-panel">
+        <section id="flashReadPanel" class="flash-read-panel">
           <div class="flash-dump-head">
             <div>
               <p id="flashDumpSummary" class="sub">导出大小：512KB，单页：1KB，行大小：74 字节</p>
@@ -1770,6 +1785,7 @@ body::before {
             </div>
           </div>
         </section>
+        <section id="flashDownloadPanel" class="flash-download-panel hidden"></section>
       </section>
     </section>
 
@@ -1952,6 +1968,7 @@ let boardConnectCanceled=false;
 let downloadConfirmResolver=null;
 let flashDumpBusy=false,flashDumpBuffer=null,flashDumpBytes=null,flashDumpOpId=0;
 let flashDumpPageIndex=0,flashDumpScrollRaf=0;
+let currentAdvancedFeature='flashRead';
 $('file').addEventListener('change',()=>{$('fileName').textContent=$('file').files[0]?'已选择：'+$('file').files[0].name:'未选择文件';});
 $('flashDumpView').addEventListener('scroll',()=>scheduleFlashDumpStickySync(),{passive:true});
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -2190,6 +2207,17 @@ function changeFlashDumpPage(delta){
   if(!flashDumpBytes)return;
   renderFlashDumpPage(flashDumpPageIndex+delta);
 }
+function switchAdvancedFeature(feature){
+  currentAdvancedFeature=feature==='flashDownload'?'flashDownload':'flashRead';
+  const isRead=currentAdvancedFeature==='flashRead';
+  $('tabFlashRead').classList.toggle('active',isRead);
+  $('tabFlashDownload').classList.toggle('active',!isRead);
+  $('flashReadPanel').classList.toggle('hidden',!isRead);
+  $('flashDownloadPanel').classList.toggle('hidden',isRead);
+  if(isRead&&flashDumpBuffer){
+    scheduleFlashDumpStickySync();
+  }
+}
 async function getFlashDumpStatus(opId){
   const r=await fetch('/api/flash-dump/status?id='+encodeURIComponent(opId),{cache:'no-store'});
   let j=null;
@@ -2292,7 +2320,7 @@ function switchPage(page){
   if(page==='about'){
     switchAboutSection('intro');
   }
-  if(page==='flashDump'&&flashDumpBuffer){
+  if(page==='flashDump'&&currentAdvancedFeature==='flashRead'&&flashDumpBuffer){
     scheduleFlashDumpStickySync();
   }
   if(page==='params'){
