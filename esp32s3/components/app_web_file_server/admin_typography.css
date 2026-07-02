@@ -147,11 +147,11 @@ th,
 }
 
 .root {
-  grid-template-columns: 152px 234px minmax(0, 1fr);
+  grid-template-columns: 188px 164px minmax(0, 1fr);
 }
 
 .root.page-files {
-  grid-template-columns: 152px minmax(0, 1fr);
+  grid-template-columns: 188px minmax(0, 1fr);
 }
 
 .left-nav {
